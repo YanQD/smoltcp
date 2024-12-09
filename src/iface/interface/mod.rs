@@ -121,6 +121,7 @@ pub struct InterfaceInner {
 
 /// Configuration structure used for creating a network interface.
 #[non_exhaustive]
+#[derive(Clone)]
 pub struct Config {
     /// Random seed.
     ///
