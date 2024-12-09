@@ -273,35 +273,51 @@ impl BridgeWrapper {
         })))
     }
     
-    pub fn poll(&self) {
-        let now = Instant::now();
-        
-        // 遍历所有端口
-        for port_num in 0..self.num_ports() {
-            if let Some(mut port) = self.get_bridgeport(port_num) {
-                // 创建该端口的 interface
-                let mut iface = port.create_interface(now);
-                
-                // // 轮询该接口
-                // port.with_device_mut(|device| {
-                //     if iface.poll(now, device, &mut SocketSet::new(vec![])) {
-                //         // 如果有数据，处理该数据帧
-                //         if let Some(frame_data) = port.recv(now) {
-                //             if let Ok(frame) = EthernetFrame::new_checked(&frame_data) {
-                //                 debug!("Received frame on port {}: src={}, dst={}", 
-                //                     port_num, frame.src_addr(), frame.dst_addr());
-                                
-                //                 // // 处理并转发数据帧
-                //                 // if let Err(e) = self.process_frame(&frame, port_num, now) {
-                //                 //     debug!("Error processing frame: {}", e);
-                //                 // }
-                //             }
-                //         }
-                //     }
-                // });
-            }
-        }
-    }
+    // pub fn poll(&self, now: Instant, sockets: &mut SocketSet<'_>) {
+    //     // 遍历所有端口
+    //     for port_num in 0..self.num_ports() {
+    //         println!("Bridge: port_num {:?}", port_num);
+    //         // 获取端口
+    //         if let Some(port) = self.0.lock().ports.get_mut(&port_num) {
+    //             // 轮询该接口
+    //             let device = port.get_port_device();
+    //             let mut device = device.lock();
+
+    //             port.port_iface.poll(now, &mut *device, sockets);
+
+    //             // if port.port_iface.poll(now, &mut *device, sockets) {
+    //             //     // 如果有数据，处理该数据帧。
+    //             //     if let Some(frame_data) = port.recv(now) {
+    //             //         if let Ok(frame) = EthernetFrame::new_checked(&frame_data) {
+    //             //             debug!("Received frame on port {}: src={}, dst={}", 
+    //             //                 port_num, frame.src_addr(), frame.dst_addr());
+                            
+    //             //             // // 处理并转发数据帧
+    //             //             // if let Err(e) = self.process_frame(&frame, port_num, now) {
+    //             //             //     debug!("Error processing frame: {}", e);
+    //             //             // }
+    //             //         }
+    //             //     }
+    //             // }
+    //         }
+    //     }
+    // }
+
+    // pub fn poll_delay(&self, now: Instant, sockets: &SocketSet) -> Option<Duration> {
+    //     let mut delay = None;
+
+    //     for port_num in 0..self.num_ports() {
+    //         if let Some(port) = self.0.lock().ports.get(&port_num) {
+    //             let device = port.get_port_device();
+    //             let device = device.lock();
+
+    //             let d = port.port_iface.poll_delay(now, sockets);
+    //             return Some(d);
+    //         }
+    //     }
+
+    //     return None;
+    // }
 
     pub fn get_bridge(&self) -> Arc<Mutex<Bridge>> {
         self.0.clone()
@@ -326,11 +342,12 @@ impl BridgeWrapper {
         let port_device = Arc::new(Mutex::new(port_device));
     
         let port = BridgePort {
-            port_now,
-            port_config,
-            port_device,
-            port_num,
-        };
+                    // port_iface,
+                    port_now,
+                    port_config,
+                    port_device: port_device.clone(),
+                    port_num,
+                };
     
         bridge.ports.insert(port_num, port);
         bridge.num_ports += 1;

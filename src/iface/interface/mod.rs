@@ -507,6 +507,7 @@ impl Interface {
         }
     }
 
+    // 数据接收处理
     fn socket_ingress<D>(&mut self, device: &mut D, sockets: &mut SocketSet<'_>) -> bool
     where
         D: Device + ?Sized,
@@ -520,6 +521,8 @@ impl Interface {
                 if frame.is_empty() {
                     return;
                 }
+
+                println!("\x1b[32mINGRESS: Received raw frame: {:?}\x1b[0m", frame);
 
                 match self.inner.caps.medium {
                     #[cfg(feature = "medium-ethernet")]
@@ -579,6 +582,7 @@ impl Interface {
         processed_any
     }
 
+    // 数据发送处理
     fn socket_egress<D>(&mut self, device: &mut D, sockets: &mut SocketSet<'_>) -> bool
     where
         D: Device + ?Sized,
@@ -601,6 +605,8 @@ impl Interface {
 
             let mut neighbor_addr = None;
             let mut respond = |inner: &mut InterfaceInner, meta: PacketMeta, response: Packet| {
+                println!("\x1b[33mEGRESS: Attempting to send packet: {:?}\x1b[0m", response);
+
                 neighbor_addr = Some(response.ip_repr().dst_addr());
                 let t = device.transmit(inner.now).ok_or_else(|| {
                     net_debug!("failed to transmit IP: device exhausted");
@@ -1064,6 +1070,8 @@ impl InterfaceInner {
         frag: &mut Fragmenter,
     ) -> Result<(), DispatchError> {
         let mut ip_repr = packet.ip_repr();
+
+        println!("\x1b[33mIP representation: {:?}\x1b[0m", ip_repr);  // 打印IP表示
         assert!(!ip_repr.dst_addr().is_unspecified());
 
         // Dispatch IEEE802.15.4:
@@ -1124,11 +1132,19 @@ impl InterfaceInner {
             frame.set_src_addr(src_addr);
             frame.set_dst_addr(dst_hardware_addr);
 
+            println!("\x1b[36mEthernet Frame: src={}, dst={}\x1b[0m", src_addr, dst_hardware_addr);  // 打印以太网帧信息
+
             match repr.version() {
                 #[cfg(feature = "proto-ipv4")]
-                IpVersion::Ipv4 => frame.set_ethertype(EthernetProtocol::Ipv4),
+                IpVersion::Ipv4 => {
+                    frame.set_ethertype(EthernetProtocol::Ipv4);
+                    println!("\x1b[36mEthertype: IPv4\x1b[0m");
+                },
                 #[cfg(feature = "proto-ipv6")]
-                IpVersion::Ipv6 => frame.set_ethertype(EthernetProtocol::Ipv6),
+                IpVersion::Ipv6 => {
+                    frame.set_ethertype(EthernetProtocol::Ipv6);
+                    println!("\x1b[36mEthertype: IPv6\x1b[0m");
+                },
             }
 
             Ok(())

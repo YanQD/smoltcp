@@ -107,6 +107,7 @@ fn main() {
 
     // 添加端口到网桥
     bridge.add_port(
+        // iface1,
         config1,
         device1,
         0, 
@@ -114,6 +115,7 @@ fn main() {
     ).unwrap();
 
     bridge.add_port(
+        // iface2,
         config2,
         device2,
         1,
@@ -147,6 +149,10 @@ fn main() {
                 iface1.poll(timestamp1, device, &mut sockets1);
             });
 
+            // // bridge poll
+            // println!("\x1b[35mClient Second: Bridge poll\x1b[0m");
+            // bridge_clone1.poll(timestamp1, &mut sockets1);
+
             let socket1 = sockets1.get_mut::<udp::Socket>(udp_handle1);
             if !socket1.is_open() {
                 socket1.bind(7969).unwrap();
@@ -158,14 +164,11 @@ fn main() {
                 Ok(_) => println!("\x1b[35mClient First: Sent data {:?} to {}:{}\x1b[0m", data, IpAddress::v4(192, 168, 69, 4), 7979),
                 Err(e) => println!("Failed to send data: {}", e),
             }
-
-            // bridge poll
-            println!("\x1b[35mClient Second: Bridge poll\x1b[0m");
-            bridge_clone1.poll();
             
             if let Err(e) = phy_wait(fd1, iface1.poll_delay(timestamp1, &sockets1)) {
                 println!("Sender wait error: {}", e);
             }
+            // thread::sleep(std::time::Duration::from_secs(1));
         }
     });
 
@@ -178,9 +181,14 @@ fn main() {
         // 处理接收以及发送
         loop {
             let timestamp2 = Instant::now();
+
             bridgeport2.with_device_mut(|device| {
                 iface2.poll(timestamp2, device, &mut sockets2);
             });
+
+            // // bridge poll
+            // println!("\x1b[35mServer Second: Bridge poll\x1b[0m");
+            // bridge_clone2.poll(timestamp2, &mut sockets2);
 
             let socket2 = sockets2.get_mut::<udp::Socket>(udp_handle2);
             if !socket2.is_open() {
@@ -203,12 +211,11 @@ fn main() {
                 socket2.send_slice(&data, endpoint).unwrap();
             }
 
-            // bridge poll
-            bridge_clone2.poll();
+            // if let Err(e) = phy_wait(fd2, iface2.poll_delay(timestamp2, &sockets2)) {
+            //     println!("Receiver wait error: {}", e);
+            // }
 
-            if let Err(e) = phy_wait(fd2, iface2.poll_delay(timestamp2, &sockets2)) {
-                println!("Receiver wait error: {}", e);
-            }
+            thread::sleep(std::time::Duration::from_secs(1));
         }
     });
 

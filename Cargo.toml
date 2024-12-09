@@ -25,6 +25,7 @@ bitflags = { version = "1.0", default-features = false }
 defmt = { version = "0.3", optional = true }
 cfg-if = "1.0.0"
 heapless = "0.8"
+spin = "0.9"
 
 [dev-dependencies]
 env_logger = "0.10"
@@ -267,6 +268,14 @@ rpl-parents-buffer-count-32 = []
 name = "packet2pcap"
 path = "utils/packet2pcap.rs"
 required-features = ["std"]
+
+[[example]]
+name = "bridge"
+required-features = ["std", "medium-ethernet", "medium-ip", "phy-tuntap_interface", "proto-ipv4", "proto-ipv6", "socket-tcp", "socket-udp"]
+
+[[example]]
+name = "sample_demo"
+required-features = ["std", "medium-ethernet", "medium-ip", "phy-tuntap_interface", "proto-ipv4", "proto-ipv6", "socket-tcp", "socket-udp"]
 
 [[example]]
 name = "tcpdump"
