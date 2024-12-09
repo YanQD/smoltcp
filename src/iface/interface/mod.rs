@@ -26,6 +26,7 @@ mod udp;
 
 #[cfg(feature = "proto-igmp")]
 pub use igmp::MulticastError;
+use log::debug;
 
 use super::packet::*;
 
@@ -595,7 +596,10 @@ impl Interface {
         }
 
         let mut emitted_any = false;
+
+        debug!("socket_egress checkpoint 1");
         for item in sockets.items_mut() {
+            debug!("socket_egress checkpoint 1");
             if !item
                 .meta
                 .egress_permitted(self.inner.now, |ip_addr| self.inner.has_neighbor(&ip_addr))
@@ -603,11 +607,14 @@ impl Interface {
                 continue;
             }
 
+            debug!("socket_egress checkpoint 2");
+
             let mut neighbor_addr = None;
             let mut respond = |inner: &mut InterfaceInner, meta: PacketMeta, response: Packet| {
-                println!("\x1b[33mEGRESS: Attempting to send packet: {:?}\x1b[0m", response);
+                println!("\x1b[36mEGRESS: Attempting to send packet: {:?}\x1b[0m", response);
 
                 neighbor_addr = Some(response.ip_repr().dst_addr());
+                println!("\x1b[33mEGRESS: Neighbor address: {:?}\x1b[0m", neighbor_addr);
                 let t = device.transmit(inner.now).ok_or_else(|| {
                     net_debug!("failed to transmit IP: device exhausted");
                     EgressError::Exhausted
@@ -1007,6 +1014,8 @@ impl InterfaceInner {
                         frame.set_dst_addr(EthernetAddress::BROADCAST);
                         frame.set_ethertype(EthernetProtocol::Arp);
 
+                        println!("{:?}", frame);
+
                         arp_repr.emit(&mut ArpPacket::new_unchecked(frame.payload_mut()))
                     })
                 {
@@ -1106,6 +1115,8 @@ impl InterfaceInner {
             total_len = EthernetFrame::<&[u8]>::buffer_len(total_len);
         }
 
+        debug!("checkpoint 1");
+
         // If the medium is Ethernet, then we need to retrieve the destination hardware address.
         #[cfg(feature = "medium-ethernet")]
         let (dst_hardware_addr, mut tx_token) = match self.caps.medium {
@@ -1122,6 +1133,8 @@ impl InterfaceInner {
             }
             _ => (EthernetAddress([0; 6]), tx_token),
         };
+
+        debug!("checkpoint 2");
 
         // Emit function for the Ethernet header.
         #[cfg(feature = "medium-ethernet")]

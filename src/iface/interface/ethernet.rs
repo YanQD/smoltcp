@@ -58,7 +58,7 @@ impl InterfaceInner {
             frame.set_src_addr(src_addr);
 
             f(frame);
-
+            
             Ok(())
         })
     }
