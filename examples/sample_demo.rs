@@ -35,7 +35,7 @@ fn main() {
     let server_thread = thread::spawn(move || {
         println!("\x1b[31mServer thread started\x1b[0m");
         let (mut server_iface, mut server_device) = create_network_stack(
-            "tap1", 
+            "tap2", 
             [192, 168, 69, 1], 
             EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]));
         let server_fd = server_device.as_raw_fd();
@@ -57,6 +57,7 @@ fn main() {
         let server_handle = server_sockets.add(server_socket);
 
         loop {
+            println!("\x1b[35mServer loop\x1b[0m");
             let timestamp = Instant::now();
             server_iface.poll(timestamp, &mut server_device, &mut server_sockets);
 
@@ -68,7 +69,7 @@ fn main() {
 
             let client = match socket.recv() {
                 Ok((data, endpoint)) => {
-                    debug!("udp:6969 recv data: {:?} from {}", data, endpoint);
+                    debug!("Server: udp: 6969 recv data: {:?} from {}", data, endpoint);
                     let mut data = data.to_vec();
                     data.reverse();
                     Some((endpoint, data))
@@ -77,7 +78,7 @@ fn main() {
             };
 
             if let Some((endpoint, data)) = client {
-                debug!("udp:6969 send data: {:?} to {}", data, endpoint,);
+                debug!("Server: udp: 6969 send data: {:?} to {}", data, endpoint,);
                 socket.send_slice(&data, endpoint).unwrap();
             }
 
@@ -92,7 +93,7 @@ fn main() {
 
         let server_endpoint = (IpAddress::v4(192, 168, 69, 1), 6969);
         let (mut client_iface, mut client_device) = create_network_stack(
-            "tap0", 
+            "tap1", 
             [192, 168, 69, 2], 
             EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]));
         let client_fd = client_device.as_raw_fd();
@@ -114,6 +115,7 @@ fn main() {
         let client_handle = client_sockets.add(client_socket);
 
         loop {
+            println!("\x1b[35mClient loop\x1b[0m");
             let timestamp = Instant::now();
             client_iface.poll(timestamp, &mut client_device, &mut client_sockets);
 
@@ -125,14 +127,14 @@ fn main() {
 
             let data = b"Hello from sender!";
             match socket.send_slice(data, server_endpoint) {
-                Ok(_) => println!("Sent data {:?} to {:?}", data, server_endpoint),
+                Ok(_) => println!("Client: Sent data {:?} to {:?}", data, server_endpoint),
                 Err(e) => println!("Failed to send data: {}", e),
             }
 
             phy_wait(client_fd, client_iface.poll_delay(timestamp, &client_sockets))
                 .expect("wait error");
 
-            thread::sleep(Duration::from_secs(1));         
+            thread::sleep(Duration::from_secs(2));
         }
     });
 

@@ -1,11 +1,14 @@
 use core::fmt;
+use std::{os::unix::thread, time::Duration};
 use log::debug;
 use alloc::vec;
 use spin::Mutex;
 use alloc::{collections::BTreeMap, sync::Arc, vec::Vec};
 use smoltcp::{iface::{Config, Interface, SocketSet}, phy::{Device, DeviceCapabilities, RxToken, TunTapInterface, TxToken}, time::Instant, wire::{EthernetAddress, EthernetFrame}};
 
-use crate::bridge_fdb::{BridgeifPortmask, BR_FLOOD, MAX_FDB_ENTRIES};
+pub const MAX_FDB_ENTRIES: usize = 1024;
+pub type BridgeifPortmask = u8;
+pub const BR_FLOOD: BridgeifPortmask = !0;
 
 const MAX_FRAME_SIZE: usize = 1522; // 略大于标准以太网帧的最大大小
 
@@ -19,6 +22,37 @@ pub struct BridgePort {
 }
 
 impl BridgePort {
+    // 接收数据帧
+    pub fn receive_frame(&mut self, timestamp: Instant) -> Option<Vec<u8>> {
+        let mut device = self.port_device.lock();
+        
+        println!("Trying to receive on port...");
+
+        // 使用 TunTapInterface 的 receive 方法
+        if let Some((rx_token, _tx_token)) = device.receive(timestamp) {
+            // 使用 RxToken 来获取数据
+            println!("Received data!");
+            let frame_data = rx_token.consume(|buffer| {
+                let mut data = Vec::new();
+                data.extend_from_slice(buffer);
+                data
+            });
+            Some(frame_data)
+        } else {
+            None
+        }
+    }
+
+    // 发送数据帧
+    pub fn transmit_frame(&mut self, timestamp: Instant, frame: &[u8]) {
+        let mut device = self.port_device.lock();
+        if let Some(tx_token) = device.transmit(timestamp) {
+            tx_token.consume(frame.len(), |buffer| {
+                buffer.copy_from_slice(frame);
+            });
+        }
+    }
+
     pub fn send(&mut self, frame: &EthernetFrame<&mut [u8]>, time: Instant) -> Result<(), ()> {
         if let Some(tx_token) = self.port_device.lock()
             .transmit(time) {
@@ -244,6 +278,86 @@ pub struct Bridge {
     // pub fdb_dynamic: BridgeDfdb,
 }
 
+impl Bridge {
+    pub fn process_frames(&mut self) {
+        let now = Instant::now();
+        
+        // 遍历所有端口接收数据
+        for (port_num, port) in self.ports.iter_mut() {
+            println!("Bridge: port_num {:?}", port_num);
+            if let Some(frame) = port.receive_frame(now) {
+                // 打印接收到的数据（使用绿色）
+                println!("\x1b[32mReceived frame on port {}: {:?}\x1b[0m", port_num, frame);
+
+                // 如果是 ARP 包（假设是以太网帧）
+                if frame.len() >= 14 && frame[12] == 0x08 && frame[13] == 0x06 {
+                    let dst_mac = EthernetAddress::from_bytes(&frame[0..6]);
+                    let src_mac = EthernetAddress::from_bytes(&frame[6..12]);
+                    
+                    println!("\x1b[33mARP frame details:\x1b[0m");
+                    println!("Dst MAC: {:?}", dst_mac);
+                    println!("Src MAC: {:?}", src_mac);
+                    
+                    // 更新转发数据库
+                    let mut fdb = self.fdb_static.fdb.lock();
+                    fdb.entry(src_mac).or_insert(BridgeSfdbEntry {
+                        used: true,
+                        dst_ports: 1 << port_num
+                    });
+                }
+            }
+        }
+
+        println!("Bridge: process_frames over");
+    }
+
+    pub fn decide_forward_ports(&self, dst_addr: &EthernetAddress, in_port: u8) -> Vec<u8> {
+        if let Some(entry) = self.fdb_static.get_entry(dst_addr) {
+            debug!("Static FDB {}", entry.dst_ports);
+            return vec![entry.dst_ports as u8];
+        }
+
+        // if let Some(port) = self.fdb_dynamic.get_entry(dst_addr) {
+        //     debug!("Dynamic FDB {}", port);
+        //     return vec![port];
+        // }
+
+        debug!("Broadcasting frame");
+        (0..self.num_ports).filter(|&p| p != in_port).collect()
+    }
+
+    pub fn fdb_add(&self, addr: &EthernetAddress, ports: usize) -> Result<(), &'static str> {
+        self.fdb_static.sfdb_add(addr, ports)
+    }
+
+    pub fn fdb_remove(&self, addr: &EthernetAddress) -> Result<(), &'static str> {
+        self.fdb_static.sfdb_remove(addr)
+    }
+
+    pub fn find_dst_ports(&self, dst_addr: &EthernetAddress) -> BridgeifPortmask {
+        let fdb = self.fdb_static.fdb.lock();
+
+        for (k, v) in fdb.iter() {
+            if v.used && k == dst_addr {
+                return v.dst_ports as u8;
+            }
+        }
+
+        if dst_addr.0[0] & 1 != 0 {
+            return BR_FLOOD;
+        }
+
+        0
+    }
+
+    pub fn remove_port(&mut self, port_num: u8) -> Option<BridgePort> {
+        if self.ports.remove(&port_num).is_some() {
+            self.num_ports -= 1;
+        }
+        self.ports.remove(&port_num)
+    }
+}
+
 #[derive(Clone)]
 pub struct BridgeWrapper(Arc<Mutex<Bridge>>);
 
@@ -272,52 +386,6 @@ impl BridgeWrapper {
             // fdb_dynamic: BridgeDfdb::new(MAX_FDB_ENTRIES as u16, ts),
         })))
     }
-    
-    // pub fn poll(&self, now: Instant, sockets: &mut SocketSet<'_>) {
-    //     // 遍历所有端口
-    //     for port_num in 0..self.num_ports() {
-    //         println!("Bridge: port_num {:?}", port_num);
-    //         // 获取端口
-    //         if let Some(port) = self.0.lock().ports.get_mut(&port_num) {
-    //             // 轮询该接口
-    //             let device = port.get_port_device();
-    //             let mut device = device.lock();
-
-    //             port.port_iface.poll(now, &mut *device, sockets);
-
-    //             // if port.port_iface.poll(now, &mut *device, sockets) {
-    //             //     // 如果有数据，处理该数据帧。
-    //             //     if let Some(frame_data) = port.recv(now) {
-    //             //         if let Ok(frame) = EthernetFrame::new_checked(&frame_data) {
-    //             //             debug!("Received frame on port {}: src={}, dst={}", 
-    //             //                 port_num, frame.src_addr(), frame.dst_addr());
-                            
-    //             //             // // 处理并转发数据帧
-    //             //             // if let Err(e) = self.process_frame(&frame, port_num, now) {
-    //             //             //     debug!("Error processing frame: {}", e);
-    //             //             // }
-    //             //         }
-    //             //     }
-    //             // }
-    //         }
-    //     }
-    // }
-
-    // pub fn poll_delay(&self, now: Instant, sockets: &SocketSet) -> Option<Duration> {
-    //     let mut delay = None;
-
-    //     for port_num in 0..self.num_ports() {
-    //         if let Some(port) = self.0.lock().ports.get(&port_num) {
-    //             let device = port.get_port_device();
-    //             let device = device.lock();
-
-    //             let d = port.port_iface.poll_delay(now, sockets);
-    //             return Some(d);
-    //         }
-    //     }
-
-    //     return None;
-    // }
 
     pub fn get_bridge(&self) -> Arc<Mutex<Bridge>> {
         self.0.clone()
@@ -398,11 +466,6 @@ impl BridgeWrapper {
         Ok(())
     }
 
-    // pub fn age_fdb(&self, now: Instant) {
-    //     let bridge = self.0.lock();
-    //     bridge.fdb_dynamic.age_entries(now);
-    // }
-
     pub fn receive_frame(&self, time: Instant) -> Option<(u8, Vec<u8>)> {
         let mut bridge = self.0.lock();
         for (port_num, port) in bridge.ports.iter_mut() {
@@ -447,53 +510,16 @@ impl BridgeWrapper {
         }
         None
     }
-}
 
-impl Bridge {
-    pub fn decide_forward_ports(&self, dst_addr: &EthernetAddress, in_port: u8) -> Vec<u8> {
-        if let Some(entry) = self.fdb_static.get_entry(dst_addr) {
-            debug!("Static FDB {}", entry.dst_ports);
-            return vec![entry.dst_ports as u8];
-        }
-
-        // if let Some(port) = self.fdb_dynamic.get_entry(dst_addr) {
-        //     debug!("Dynamic FDB {}", port);
-        //     return vec![port];
-        // }
-
-        debug!("Broadcasting frame");
-        (0..self.num_ports).filter(|&p| p != in_port).collect()
+    // 同步方式处理数据帧
+    pub fn process_one_frame(&self) {
+        let mut bridge = self.0.lock();
+        bridge.process_frames();
     }
 
-    pub fn fdb_add(&self, addr: &EthernetAddress, ports: usize) -> Result<(), &'static str> {
-        self.fdb_static.sfdb_add(addr, ports)
-    }
-
-    pub fn fdb_remove(&self, addr: &EthernetAddress) -> Result<(), &'static str> {
-        self.fdb_static.sfdb_remove(addr)
-    }
-
-    pub fn find_dst_ports(&self, dst_addr: &EthernetAddress) -> BridgeifPortmask {
-        let fdb = self.fdb_static.fdb.lock();
-
-        for (k, v) in fdb.iter() {
-            if v.used && k == dst_addr {
-                return v.dst_ports as u8;
-            }
-        }
-
-        if dst_addr.0[0] & 1 != 0 {
-            return BR_FLOOD;
-        }
-
-        0
-    }
-
-    pub fn remove_port(&mut self, port_num: u8) -> Option<BridgePort> {
-        if self.ports.remove(&port_num).is_some() {
-            self.num_ports -= 1;
-        }
-        self.ports.remove(&port_num)
+    // 直接运行
+    pub fn run(&self, interval: Duration) {
+            self.process_one_frame();
+            std::thread::sleep(interval);
     }
 }
-

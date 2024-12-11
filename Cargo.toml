@@ -270,6 +270,10 @@ path = "utils/packet2pcap.rs"
 required-features = ["std"]
 
 [[example]]
+name = "sample_arp"
+required-features = ["std", "medium-ethernet", "medium-ip", "phy-tuntap_interface", "proto-ipv4", "proto-ipv6", "socket-tcp", "socket-udp"]
+
+[[example]]
 name = "bridge"
 required-features = ["std", "medium-ethernet", "medium-ip", "phy-tuntap_interface", "proto-ipv4", "proto-ipv6", "socket-tcp", "socket-udp"]
 

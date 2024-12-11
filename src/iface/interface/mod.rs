@@ -515,6 +515,7 @@ impl Interface {
     {
         let mut processed_any = false;
 
+        debug!("socket_ingress started");
         while let Some((rx_token, tx_token)) = device.receive(self.inner.now) {
             rx_token.preprocess(sockets);
             let rx_meta = rx_token.meta();
@@ -595,19 +596,17 @@ impl Interface {
             Dispatch(DispatchError),
         }
 
+        debug!("socket_egress started");
+
         let mut emitted_any = false;
 
-        debug!("socket_egress checkpoint 1");
         for item in sockets.items_mut() {
-            debug!("socket_egress checkpoint 1");
             if !item
                 .meta
                 .egress_permitted(self.inner.now, |ip_addr| self.inner.has_neighbor(&ip_addr))
             {
                 continue;
             }
-
-            debug!("socket_egress checkpoint 2");
 
             let mut neighbor_addr = None;
             let mut respond = |inner: &mut InterfaceInner, meta: PacketMeta, response: Packet| {
@@ -1013,9 +1012,7 @@ impl InterfaceInner {
                     self.dispatch_ethernet(tx_token, arp_repr.buffer_len(), |mut frame| {
                         frame.set_dst_addr(EthernetAddress::BROADCAST);
                         frame.set_ethertype(EthernetProtocol::Arp);
-
-                        println!("{:?}", frame);
-
+                        
                         arp_repr.emit(&mut ArpPacket::new_unchecked(frame.payload_mut()))
                     })
                 {
@@ -1115,8 +1112,6 @@ impl InterfaceInner {
             total_len = EthernetFrame::<&[u8]>::buffer_len(total_len);
         }
 
-        debug!("checkpoint 1");
-
         // If the medium is Ethernet, then we need to retrieve the destination hardware address.
         #[cfg(feature = "medium-ethernet")]
         let (dst_hardware_addr, mut tx_token) = match self.caps.medium {
@@ -1133,8 +1128,6 @@ impl InterfaceInner {
             }
             _ => (EthernetAddress([0; 6]), tx_token),
         };
-
-        debug!("checkpoint 2");
 
         // Emit function for the Ethernet header.
         #[cfg(feature = "medium-ethernet")]

@@ -316,7 +316,6 @@ impl Repr {
                 packet.set_source_protocol_addr(source_protocol_addr.as_bytes());
                 packet.set_target_hardware_addr(target_hardware_addr.as_bytes());
                 packet.set_target_protocol_addr(target_protocol_addr.as_bytes());
-                println!("packet: {}", packet);
             }
         }
     }

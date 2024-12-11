@@ -2,7 +2,6 @@ extern crate alloc;
 
 pub mod utils;
 pub mod bridge;
-pub mod bridge_fdb;
 
 use log::debug;
 
@@ -16,7 +15,7 @@ use std::os::unix::io::AsRawFd;
 use smoltcp::socket::udp;
 use smoltcp::time::Instant;
 use smoltcp::iface::{Config, Interface, SocketSet};
-use smoltcp::phy::{wait as phy_wait, Medium, TunTapInterface};
+use smoltcp::phy::{wait as phy_wait, Loopback, Medium, TunTapInterface};
 use smoltcp::wire::{EthernetAddress, HardwareAddress, IpAddress, IpCidr, Ipv4Address, Ipv6Address};
 
 pub const BRIDGE_MAC: [u8; 6] = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
@@ -143,6 +142,7 @@ fn main() {
 
         // 处理发送
         loop {
+            println!("\x1b[35mClient loop\x1b[0m");
             let timestamp1 = Instant::now();
             
             bridgeport1.with_device_mut(|device| {
@@ -151,7 +151,7 @@ fn main() {
 
             // // bridge poll
             // println!("\x1b[35mClient Second: Bridge poll\x1b[0m");
-            // bridge_clone1.poll(timestamp1, &mut sockets1);
+            // bridge_clone1.run(std::time::Duration::from_micros(100));
 
             let socket1 = sockets1.get_mut::<udp::Socket>(udp_handle1);
             if !socket1.is_open() {
@@ -168,57 +168,56 @@ fn main() {
             if let Err(e) = phy_wait(fd1, iface1.poll_delay(timestamp1, &sockets1)) {
                 println!("Sender wait error: {}", e);
             }
-            // thread::sleep(std::time::Duration::from_secs(1));
         }
     });
 
-    // 创建服务端线程
-    let bridge_clone2 = bridge.clone();
-    let client_thread = thread::spawn(move || {
-        println!("\x1b[31mThis is in Receiver\x1b[0m");
-        let bridgeport2 = bridge_clone2.get_bridgeport(1).unwrap();
+    // // 创建服务端线程
+    // let bridge_clone2 = bridge.clone();
+    // let client_thread = thread::spawn(move || {
+    //     println!("\x1b[31mThis is in Receiver\x1b[0m");
+    //     let bridgeport2 = bridge_clone2.get_bridgeport(1).unwrap();
         
-        // 处理接收以及发送
-        loop {
-            let timestamp2 = Instant::now();
+    //     // 处理接收以及发送
+    //     loop {
+    //         let timestamp2 = Instant::now();
 
-            bridgeport2.with_device_mut(|device| {
-                iface2.poll(timestamp2, device, &mut sockets2);
-            });
+    //         bridgeport2.with_device_mut(|device| {
+    //             iface2.poll(timestamp2, device, &mut sockets2);
+    //         });
 
-            // // bridge poll
-            // println!("\x1b[35mServer Second: Bridge poll\x1b[0m");
-            // bridge_clone2.poll(timestamp2, &mut sockets2);
+    //         // // bridge poll
+    //         // println!("\x1b[35mServer Second: Bridge poll\x1b[0m");
+    //         // bridge_clone2.run();
 
-            let socket2 = sockets2.get_mut::<udp::Socket>(udp_handle2);
-            if !socket2.is_open() {
-                socket2.bind(7979).unwrap();
-                println!("\x1b[35mReceiver socket bound to port 7979\x1b[0m");
-            }
+    //         let socket2 = sockets2.get_mut::<udp::Socket>(udp_handle2);
+    //         if !socket2.is_open() {
+    //             socket2.bind(7979).unwrap();
+    //             println!("\x1b[35mReceiver socket bound to port 7979\x1b[0m");
+    //         }
 
-            let server = match socket2.recv() {
-                Ok((data, endpoint)) => {
-                    println!("udp: recv data: {:?} from {}", data, endpoint);
-                    let mut data = data.to_vec();
-                    data.reverse();
-                    Some((endpoint, data))
-                }
-                Err(_) => None,
-            };
+    //         let server = match socket2.recv() {
+    //             Ok((data, endpoint)) => {
+    //                 println!("udp: recv data: {:?} from {}", data, endpoint);
+    //                 let mut data = data.to_vec();
+    //                 data.reverse();
+    //                 Some((endpoint, data))
+    //             }
+    //             Err(_) => None,
+    //         };
 
-            if let Some((endpoint, data)) = server {
-                println!("udp: send data: {:?} to {}", data, endpoint,);
-                socket2.send_slice(&data, endpoint).unwrap();
-            }
+    //         if let Some((endpoint, data)) = server {
+    //             println!("udp: send data: {:?} to {}", data, endpoint,);
+    //             socket2.send_slice(&data, endpoint).unwrap();
+    //         }
 
-            // if let Err(e) = phy_wait(fd2, iface2.poll_delay(timestamp2, &sockets2)) {
-            //     println!("Receiver wait error: {}", e);
-            // }
+    //         if let Err(e) = phy_wait(fd2, iface2.poll_delay(timestamp2, &sockets2)) {
+    //             println!("Receiver wait error: {}", e);
+    //         }
+    //     }
+    // });
 
-            thread::sleep(std::time::Duration::from_secs(1));
-        }
-    });
+    println!("\x1b[31mBridge Test Over!\x1b[0m");
 
     server_thread.join().unwrap();
-    client_thread.join().unwrap();
+    // client_thread.join().unwrap();
 }

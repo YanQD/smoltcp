@@ -114,6 +114,9 @@ impl phy::TxToken for TxToken {
         let mut lower = self.lower.borrow_mut();
         let mut buffer = vec![0; len];
         let result = f(&mut buffer);
+
+        println!("\x1b[32mTxToken consume: {:?}\x1b[0m", buffer);
+
         match lower.send(&buffer[..]) {
             Ok(_) => {}
             Err(err) if err.kind() == io::ErrorKind::WouldBlock => {
