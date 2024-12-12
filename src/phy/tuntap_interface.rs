@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::io;
 use std::os::unix::io::{AsRawFd, RawFd};
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 use std::vec::Vec;
 
 use crate::phy::{self, sys, Device, DeviceCapabilities, Medium};
@@ -10,14 +11,14 @@ use crate::time::Instant;
 /// A virtual TUN (IP) or TAP (Ethernet) interface.
 #[derive(Debug)]
 pub struct TunTapInterface {
-    lower: Rc<RefCell<sys::TunTapInterfaceDesc>>,
+    lower: Arc<Mutex<sys::TunTapInterfaceDesc>>,
     mtu: usize,
     medium: Medium,
 }
 
 impl AsRawFd for TunTapInterface {
     fn as_raw_fd(&self) -> RawFd {
-        self.lower.borrow().as_raw_fd()
+        self.lower.lock().unwrap().as_raw_fd()
     }
 }
 
@@ -31,7 +32,7 @@ impl TunTapInterface {
         let lower = sys::TunTapInterfaceDesc::new(name, medium)?;
         let mtu = lower.interface_mtu()?;
         Ok(TunTapInterface {
-            lower: Rc::new(RefCell::new(lower)),
+            lower: Arc::new(Mutex::new(lower)),
             mtu,
             medium,
         })
@@ -44,7 +45,7 @@ impl TunTapInterface {
     pub fn from_fd(fd: RawFd, medium: Medium, mtu: usize) -> io::Result<TunTapInterface> {
         let lower = sys::TunTapInterfaceDesc::from_fd(fd, mtu)?;
         Ok(TunTapInterface {
-            lower: Rc::new(RefCell::new(lower)),
+            lower: Arc::new(Mutex::new(lower)),
             mtu,
             medium,
         })
@@ -64,7 +65,7 @@ impl Device for TunTapInterface {
     }
 
     fn receive(&mut self, _timestamp: Instant) -> Option<(Self::RxToken<'_>, Self::TxToken<'_>)> {
-        let mut lower = self.lower.borrow_mut();
+        let mut lower = self.lower.lock().unwrap();
         let mut buffer = vec![0; self.mtu];
         match lower.recv(&mut buffer[..]) {
             Ok(size) => {
@@ -103,7 +104,7 @@ impl phy::RxToken for RxToken {
 
 #[doc(hidden)]
 pub struct TxToken {
-    lower: Rc<RefCell<sys::TunTapInterfaceDesc>>,
+    lower: Arc<Mutex<sys::TunTapInterfaceDesc>>,
 }
 
 impl phy::TxToken for TxToken {

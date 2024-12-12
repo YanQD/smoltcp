@@ -2,20 +2,20 @@ extern crate alloc;
 
 pub mod utils;
 pub mod bridge;
+pub mod frame;
 
-use log::debug;
-
-use bridge::BridgeWrapper;
+use spin::Mutex;
+use bridge::Bridge;
+use frame::FrameCapture;
 
 use std::thread;
 use std::sync::Arc;
-// use std::time::Duration;
-use std::os::unix::io::AsRawFd;
+
 
 use smoltcp::socket::udp;
 use smoltcp::time::Instant;
 use smoltcp::iface::{Config, Interface, SocketSet};
-use smoltcp::phy::{wait as phy_wait, Loopback, Medium, TunTapInterface};
+use smoltcp::phy::{wait as phy_wait, Medium};
 use smoltcp::wire::{EthernetAddress, HardwareAddress, IpAddress, IpCidr, Ipv4Address, Ipv6Address};
 
 pub const BRIDGE_MAC: [u8; 6] = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
@@ -48,11 +48,11 @@ fn main() {
     utils::setup_logging("");
 
     // 创建两个TAP设备作为测试端口
-    let device0 = TunTapInterface::new("tap2", Medium::Ethernet).unwrap();
+    let device0 = FrameCapture::new("tap2", Medium::Ethernet).unwrap();
     let _fd0 = device0.as_raw_fd();
-    let mut device1 = TunTapInterface::new("tap1", Medium::Ethernet).unwrap();
+    let mut device1 = FrameCapture::new("tap1", Medium::Ethernet).unwrap();
     let fd1 = device1.as_raw_fd();
-    let mut device2 = TunTapInterface::new("tap0", Medium::Ethernet).unwrap();
+    let mut device2 = FrameCapture::new("tap0", Medium::Ethernet).unwrap();
     let fd2 = device2.as_raw_fd();
 
     let config0 = Config::new(HardwareAddress::Ethernet(get_port1_mac()));
@@ -96,16 +96,16 @@ fn main() {
         .unwrap();
 
     // 创建网桥实例
-    let bridge = Arc::new(BridgeWrapper::new(
+    let bridge = Arc::new(Mutex::new(Bridge::new(
         config0,
         device0,
         EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x04]),
         2,  // max_ports
         Instant::now(),
-    ));
+    )));
 
     // 添加端口到网桥
-    bridge.add_port(
+    bridge.lock().add_port(
         // iface1,
         config1,
         device1,
@@ -113,7 +113,7 @@ fn main() {
         Instant::now(),
     ).unwrap();
 
-    bridge.add_port(
+    bridge.lock().add_port(
         // iface2,
         config2,
         device2,
@@ -138,7 +138,8 @@ fn main() {
     let bridge_clone1 = bridge.clone();
     let server_thread = thread::spawn(move || {
         println!("\x1b[31mThis is in Sender\x1b[0m");
-        let bridgeport1 = bridge_clone1.get_bridgeport(0).unwrap();
+        let binding = bridge_clone1.lock();
+        let bridgeport1 = binding.get_bridgeport(0).unwrap();
 
         // 处理发送
         loop {
