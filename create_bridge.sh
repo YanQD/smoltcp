@@ -79,66 +79,66 @@ assign_ip_to_tap "tap2" "192.168.69.6/24"
 
 printf "IP addresses assigned to TAP devices\n"
 
-# # 创建一个网桥
-# if ip link show br0 > /dev/null 2>&1; then
-#     echo "Bridge br0 already exists"
-# else
-#     if sudo ip link add name br0 type bridge; then
-#         echo "Bridge br0 created"
-#     else
-#         echo "Failed to create bridge br0" >&2
-#         exit 1
-#     fi
-# fi
+# 禁用网桥的防火墙
+if echo 0 | sudo tee /proc/sys/net/bridge/bridge-nf-call-iptables; then
+    echo "Bridge iptables disabled"
+else
+    echo "Failed to disable bridge iptables" >&2
+    exit 1
+fi
 
-# # 将 TAP 设备添加到网桥
-# if sudo ip link set tap1 master br0; then
-#     echo "tap1 added to bridge br0"
-# else
-#     echo "Failed to add tap1 to bridge br0" >&2
-#     exit 1
-# fi
+if echo 0 | sudo tee /proc/sys/net/bridge/bridge-nf-call-ip6tables; then
+    echo "Bridge ip6tables disabled"
+else
+    echo "Failed to disable bridge ip6tables" >&2
+    exit 1
+fi
 
-# if sudo ip link set tap2 master br0; then
-#     echo "tap2 added to bridge br0"
-# else
-#     echo "Failed to add tap2 to bridge br0" >&2
-#     exit 1
-# fi
+if echo 0 | sudo tee /proc/sys/net/bridge/bridge-nf-call-arptables; then
+    echo "Bridge arptables disabled"
+else
+    echo "Failed to disable bridge arptables" >&2
+    exit 1
+fi
 
-# printf "Bridge created and TAP devices added to it\n"
+# 创建一个网桥
+if ip link show br0 > /dev/null 2>&1; then
+    echo "Bridge br0 already exists"
+else
+    if sudo ip link add name br0 type bridge; then
+        echo "Bridge br0 created"
+    else
+        echo "Failed to create bridge br0" >&2
+        exit 1
+    fi
+fi
 
-# # 启用网桥
-# if sudo ip link set br0 up; then
-#     echo "Bridge br0 enabled"
-# else
-#     echo "Failed to enable bridge br0" >&2
-#     exit 1
-# fi
+# 将 TAP 设备添加到网桥
+if sudo ip link set tap1 master br0; then
+    echo "tap1 added to bridge br0"
+else
+    echo "Failed to add tap1 to bridge br0" >&2
+    exit 1
+fi
 
-# printf "Bridge enabled\n"
+if sudo ip link set tap2 master br0; then
+    echo "tap2 added to bridge br0"
+else
+    echo "Failed to add tap2 to bridge br0" >&2
+    exit 1
+fi
 
-# # 禁用网桥的防火墙
-# if echo 0 | sudo tee /proc/sys/net/bridge/bridge-nf-call-iptables; then
-#     echo "Bridge iptables disabled"
-# else
-#     echo "Failed to disable bridge iptables" >&2
-#     exit 1
-# fi
+printf "Bridge created and TAP devices added to it\n"
 
-# if echo 0 | sudo tee /proc/sys/net/bridge/bridge-nf-call-ip6tables; then
-#     echo "Bridge ip6tables disabled"
-# else
-#     echo "Failed to disable bridge ip6tables" >&2
-#     exit 1
-# fi
+# 启用网桥
+if sudo ip link set br0 up; then
+    echo "Bridge br0 enabled"
+else
+    echo "Failed to enable bridge br0" >&2
+    exit 1
+fi
 
-# if echo 0 | sudo tee /proc/sys/net/bridge/bridge-nf-call-arptables; then
-#     echo "Bridge arptables disabled"
-# else
-#     echo "Failed to disable bridge arptables" >&2
-#     exit 1
-# fi
+printf "Bridge enabled\n"
 
 printf "Bridge firewall rules disabled\n"
 
