@@ -101,51 +101,50 @@ else
     exit 1
 fi
 
-# 创建一个网桥
-if ip link show br0 > /dev/null 2>&1; then
-    echo "Bridge br0 already exists"
-else
-    if sudo ip link add name br0 type bridge; then
-        echo "Bridge br0 created"
-    else
-        echo "Failed to create bridge br0" >&2
-        exit 1
-    fi
-fi
+# # 创建一个网桥
+# if ip link show br0 > /dev/null 2>&1; then
+#     echo "Bridge br0 already exists"
+# else
+#     if sudo ip link add name br0 type bridge; then
+#         echo "Bridge br0 created"
+#     else
+#         echo "Failed to create bridge br0" >&2
+#         exit 1
+#     fi
+# fi
 
-# 将 TAP 设备添加到网桥
-if sudo ip link set tap1 master br0; then
-    echo "tap1 added to bridge br0"
-else
-    echo "Failed to add tap1 to bridge br0" >&2
-    exit 1
-fi
+# # 将 TAP 设备添加到网桥
+# if sudo ip link set tap1 master br0; then
+#     echo "tap1 added to bridge br0"
+# else
+#     echo "Failed to add tap1 to bridge br0" >&2
+#     exit 1
+# fi
 
-if sudo ip link set tap2 master br0; then
-    echo "tap2 added to bridge br0"
-else
-    echo "Failed to add tap2 to bridge br0" >&2
-    exit 1
-fi
+# if sudo ip link set tap2 master br0; then
+#     echo "tap2 added to bridge br0"
+# else
+#     echo "Failed to add tap2 to bridge br0" >&2
+#     exit 1
+# fi
 
-printf "Bridge created and TAP devices added to it\n"
+# printf "Bridge created and TAP devices added to it\n"
 
-# 启用网桥
-if sudo ip link set br0 up; then
-    echo "Bridge br0 enabled"
-else
-    echo "Failed to enable bridge br0" >&2
-    exit 1
-fi
+# # 启用网桥
+# if sudo ip link set br0 up; then
+#     echo "Bridge br0 enabled"
+# else
+#     echo "Failed to enable bridge br0" >&2
+#     exit 1
+# fi
 
-printf "Bridge enabled\n"
+# bridge link show
+# printf "Bridge enabled\n"
 
 printf "Bridge firewall rules disabled\n"
 
 # 验证配置
 ip addr show
-bridge link show
-
 
 # sudo ip link set tap0 down
 # sudo ip tuntap del dev tap0 mode tap

@@ -1075,6 +1075,7 @@ impl InterfaceInner {
         packet: Packet,
         frag: &mut Fragmenter,
     ) -> Result<(), DispatchError> {
+        // 从数据包中获取 IP 表示层信息
         let mut ip_repr = packet.ip_repr();
 
         println!("\x1b[33mIP representation: {:?}\x1b[0m", ip_repr);  // 打印IP表示
