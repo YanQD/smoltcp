@@ -13,13 +13,13 @@ pub struct CapturedFrame {
 }
 
 impl CapturedFrame {
-    pub fn new() -> Self {
-        CapturedFrame {
-            timestamp: Instant::now(),
-            direction: Direction::NoDefined,
-            data: Vec::new(),
-        }
-    }
+    // pub fn new() -> Self {
+    //     CapturedFrame {
+    //         timestamp: Instant::now(),
+    //         direction: Direction::NoDefined,
+    //         data: Vec::new(),
+    //     }
+    // }
 
     pub fn len(&self) -> usize {
         self.data.len()
@@ -32,34 +32,34 @@ impl CapturedFrame {
 
 #[derive(Debug, Clone)]
 enum Direction {
+    // NoDefined,
     Tx,
     Rx,
-    NoDefined,
 }
 
 pub struct FrameCapture {
     inner: TunTapInterface,
-    frames: Arc<Mutex<CapturedFrame>>,
+    frames: Arc<Mutex<Vec<CapturedFrame>>>,
 }
 
 impl FrameCapture {
     pub fn new(name: &str, medium: Medium) -> Result<Self, Box<dyn std::error::Error>> {
         Ok(FrameCapture {
-            frames: Arc::new(Mutex::new(CapturedFrame::new())),
+            frames: Arc::new(Mutex::new(Vec::new())),
             inner: TunTapInterface::new(name, medium)?,
         })
     }
 
     // 打印所有捕获的帧
     pub fn print_captured_frames(&self) {
-        let frame = &self.frames.lock();
-        // for (i, frame) in frames.iter().enumerate() {
-        //     println!("\nFrame #{}", i + 1);
+        let frames = &self.frames.lock();
+        for (i, frame) in frames.iter().enumerate() {
+            println!("\nFrame #{}", i + 1);
             println!("Timestamp: {:?}", frame.timestamp);
             println!("Direction: {:?}", frame.direction);
             println!("Data length: {}", frame.data.len());
             println!("Raw data: {:?}", frame.data);
-        // }
+        }
         println!("=== End of Captured Frames ===\n");
     }
     
@@ -67,8 +67,12 @@ impl FrameCapture {
         self.inner.as_raw_fd()
     }
 
-    pub fn get_frames(&self) -> CapturedFrame {
+    pub fn get_frames(&self) -> Vec<CapturedFrame> {
         self.frames.lock().clone()
+    }
+
+    pub fn clear_frames(&self) {
+        self.frames.lock().clear();
     }
 }
 
@@ -112,7 +116,7 @@ impl Device for FrameCapture {
 // 包装接收令牌
 pub struct FrameCaptureRxToken<'a> {
     inner: <TunTapInterface as Device>::RxToken<'a>,
-    device_frames: Arc<Mutex<CapturedFrame>>,
+    device_frames: Arc<Mutex<Vec<CapturedFrame>>>,
 }
 
 impl<'a> RxToken for FrameCaptureRxToken<'a> {
@@ -130,7 +134,7 @@ impl<'a> RxToken for FrameCaptureRxToken<'a> {
 
             // 保存发送的数据到共享的 frames 中
             let mut frames = self.device_frames.lock();
-            *frames = frame;
+            frames.push(frame);
 
             println!("Received frame:");
             print_frame(buffer);
@@ -142,7 +146,7 @@ impl<'a> RxToken for FrameCaptureRxToken<'a> {
 // 包装发送令牌
 pub struct FrameCaptureTxToken<'a> {
     inner: <TunTapInterface as Device>::TxToken<'a>,
-    device_frames: Arc<Mutex<CapturedFrame>>,
+    device_frames: Arc<Mutex<Vec<CapturedFrame>>>,
 }
 
 impl<'a> TxToken for FrameCaptureTxToken<'a> {
@@ -162,7 +166,7 @@ impl<'a> TxToken for FrameCaptureTxToken<'a> {
             
             // 保存发送的数据到共享的 frames 中
             let mut frames = self.device_frames.lock();
-            *frames = frame;
+            frames.push(frame);
 
             println!("Transmitting frame:");
             print_frame(buffer);

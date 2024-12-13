@@ -96,6 +96,8 @@ impl phy::RxToken for RxToken {
     where
         F: FnOnce(&mut [u8]) -> R,
     {
+        println!("\x1b[32mRxToken consume: {:?}\x1b[0m", self.buffer);
+        
         f(&mut self.buffer[..])
     }
 }

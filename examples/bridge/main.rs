@@ -159,7 +159,7 @@ fn main() {
         }
     });
 
-    // 创建服务端线程
+    // // 创建服务端线程
     let bridge_clone2 = switch.clone();
     let client_thread = thread::spawn(move || {
         println!("\x1b[31mThis is in Receiver\x1b[0m");

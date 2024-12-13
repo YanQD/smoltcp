@@ -1,6 +1,6 @@
 mod utils;
 
-use log::{debug, info};
+use log::info;
 use std::collections::HashMap;
 use std::os::unix::io::AsRawFd;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -8,7 +8,6 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Arc;
 use spin::Mutex;
 use std::thread;
-use std::time::Duration;
 use smoltcp::time::Instant;
 
 use smoltcp::iface::{Config, Interface, SocketSet};

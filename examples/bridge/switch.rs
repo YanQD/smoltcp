@@ -1,5 +1,3 @@
-use std::thread;
-
 use alloc::vec;
 use log::debug;
 use spin::Mutex;
@@ -64,7 +62,7 @@ impl SwitchPort {
         }
     }
 
-    pub fn get_frames(&self) -> CapturedFrame {
+    pub fn get_frames(&self) -> Vec<CapturedFrame> {
         let device = self.port_device.lock();
         device.get_frames()
     }
@@ -322,11 +320,14 @@ impl Switch {
         #[allow(unused_variables)]
         socket_handle: SocketHandle,
         num: u8,
-        mut f: F)
+        mut f: F
+    )
     where
         F: FnMut(&mut SocketSet<'_>)
     {
-        // 第一步：处理指定端口的网络操作
+        // 第一步：收集数据
+        let mut frames_to_forward = Vec::new();
+
         if let Some(port) = self.ports.get_mut(&num) {
             let fd = port.port_device.lock().as_raw_fd();
             {
@@ -336,29 +337,43 @@ impl Switch {
                 drop(device);
             }
 
+            // 获取并保存需要转发的帧
+            frames_to_forward = port.get_frames();
+
+            for i in 0..frames_to_forward.len() {
+                debug!("Test Test Test");
+                debug!("Frame to forward: {:?}", frames_to_forward[i]);
+            }
+
             f(sockets);
             
             let port_iface: &mut Interface = &mut port.port_iface;
             phy_wait(fd, port_iface.poll_delay(timestamp, &sockets)).expect("wait error");
         }
-
-        println!("Bridge poll checkpoint1!");
-
-        // 第二步：检查其他端口的数据
-        for (port_num, port) in self.ports.iter_mut() {
-            // 跳过当前处理的端口
-            if port_num == &num {
-                continue;
+    
+        // 第二步：转发数据
+        if !frames_to_forward.is_empty() {
+            println!("Got {} frames to forward", frames_to_forward.len());
+            for (port_num, port) in self.ports.iter_mut() {
+                println!("Bridge: port_num {:?}", port_num);
+                if port_num != &num {
+                    for frame in &frames_to_forward {
+                        let mut device = port.port_device.lock();
+                        if let Some(tx) = device.transmit(timestamp) {
+                            tx.consume(frame.data.len(), |buffer| {
+                                buffer.copy_from_slice(&frame.data);
+                            });
+                        }
+                        drop(device);
+                    }
+                }
             }
 
-            println!("Checking port {} for data", port_num);
-            let mut device = port.port_device.lock();
-            
-            // 检查并处理接收到的数据
-            if let Some((rx, _tx)) = device.receive(timestamp) {
-                rx.consume(|buffer| {
-                    println!("Received {} bytes on port {}", buffer.len(), port_num);
-                    println!("Data: {:?}", buffer);
+            // 清空转发的帧
+            println!("Clearing frames");
+            for (_port_num, port) in self.ports.iter_mut() {
+                port.with_device_mut(|device| {
+                    device.clear_frames();
                 });
             }
         }
