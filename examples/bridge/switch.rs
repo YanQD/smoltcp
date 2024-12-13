@@ -64,7 +64,7 @@ impl SwitchPort {
         }
     }
 
-    pub fn get_frames(&self) -> Arc<spin::Mutex<Vec<CapturedFrame>>> {
+    pub fn get_frames(&self) -> CapturedFrame {
         let device = self.port_device.lock();
         device.get_frames()
     }
@@ -326,45 +326,41 @@ impl Switch {
     where
         F: FnMut(&mut SocketSet<'_>)
     {
-        for (port_num, port) in self.ports.iter_mut() {
-            debug!("Bridge: port_num {:?}", port_num);
-            if port_num == &num {
-                let fd = port.port_device.lock().as_raw_fd();
-                let port_iface = &mut port.port_iface;
+        // 第一步：处理指定端口的网络操作
+        if let Some(port) = self.ports.get_mut(&num) {
+            let fd = port.port_device.lock().as_raw_fd();
+            {
+                let port_iface: &mut Interface = &mut port.port_iface;
                 let mut device = port.port_device.lock();
                 port_iface.poll(timestamp, &mut *device, sockets);
                 drop(device);
-                f(sockets);
-            
-                // // 获取捕获的帧
-                // let frames = port.get_frames();
-                // println!("Switch received frames from port {}: {:?}", port_num, frames);
-                // let frames_to_forward: Vec<_> = frames.lock().iter().cloned().collect();
-                // // 转发到其他端口
-                // for (other_port_num, other_port) in self.ports.iter_mut() {
-                //     if other_port_num != &num {  // 不发送给源端口
-                //         // 需要判定发送到哪个端口
-                //         for frame in &frames_to_forward {
-                //             println!("Forwarding frame from port {} to port {}", port_num, other_port_num);
-                //             // 通过其他端口的设备发送数据
-                //             let mut other_device = other_port.port_device.lock();
-                //             if let Some(tx) = other_device.transmit(timestamp) {
-                //                 tx.consume(frame.data.len(), |buffer| {
-                //                     buffer.copy_from_slice(&frame.data);
-                //                 });
-                //             }
-                //         }
-                //     }
-                // }
-                // // 清除已处理的帧
-                // port.clear_frames();
-
-                phy_wait(fd, port_iface.poll_delay(timestamp, &sockets)).expect("wait error");
-                thread::sleep(std::time::Duration::from_millis(100));
-                println!("Bridge: poll over");
             }
+
+            f(sockets);
+            
+            let port_iface: &mut Interface = &mut port.port_iface;
+            phy_wait(fd, port_iface.poll_delay(timestamp, &sockets)).expect("wait error");
         }
 
+        println!("Bridge poll checkpoint1!");
 
+        // 第二步：检查其他端口的数据
+        for (port_num, port) in self.ports.iter_mut() {
+            // 跳过当前处理的端口
+            if port_num == &num {
+                continue;
+            }
+
+            println!("Checking port {} for data", port_num);
+            let mut device = port.port_device.lock();
+            
+            // 检查并处理接收到的数据
+            if let Some((rx, _tx)) = device.receive(timestamp) {
+                rx.consume(|buffer| {
+                    println!("Received {} bytes on port {}", buffer.len(), port_num);
+                    println!("Data: {:?}", buffer);
+                });
+            }
+        }
     }
 }
