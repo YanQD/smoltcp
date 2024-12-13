@@ -310,8 +310,6 @@ fn run_server(
 
         phy_wait(fd, iface.poll_delay(timestamp, &sockets))
             .expect("wait error");
-
-        thread::sleep(Duration::from_millis(10));
     }
 
     Ok(())
@@ -381,8 +379,6 @@ fn run_client(
 
         phy_wait(fd, iface.poll_delay(timestamp, &sockets))
             .expect("wait error");
-
-        thread::sleep(Duration::from_secs(1));
     }
 
     Ok(())

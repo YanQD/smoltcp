@@ -2,6 +2,7 @@ mod utils;
 
 use log::debug;
 use std::os::unix::io::AsRawFd;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -11,41 +12,86 @@ use smoltcp::socket::udp;
 use smoltcp::time::Instant;
 use smoltcp::wire::{EthernetAddress, IpAddress, IpCidr, Ipv4Address, Ipv6Address};
 
-// 首先定义 FrameCapture 结构体和实现
+struct CapturedFrame {
+    timestamp: Instant,
+    direction: Direction,
+    data: Vec<u8>,
+}
+
+#[derive(Debug)]
+enum Direction {
+    Tx,
+    Rx,
+}
+
 struct FrameCapture {
     inner: TunTapInterface,
+    frames: Arc<Mutex<Vec<CapturedFrame>>>,
 }
+
 
 impl FrameCapture {
     fn new(name: &str, medium: Medium) -> Result<Self, Box<dyn std::error::Error>> {
         Ok(FrameCapture {
+            frames: Arc::new(Mutex::new(Vec::new())),
             inner: TunTapInterface::new(name, medium)?,
         })
+    }
+
+    // 打印所有捕获的帧
+    fn print_captured_frames(&self) {
+        let frames = self.frames.lock().unwrap();
+        println!("\n=== Captured Frames ===");
+        println!("Total frames: {}", frames.len());
+        
+        for (i, frame) in frames.iter().enumerate() {
+            println!("\nFrame #{}", i + 1);
+            println!("Timestamp: {:?}", frame.timestamp);
+            println!("Direction: {:?}", frame.direction);
+            println!("Data length: {}", frame.data.len());
+            println!("Raw data: {:?}", frame.data);
+        }
+        println!("=== End of Captured Frames ===\n");
+    }
+    
+    fn as_raw_fd(&self) -> i32 {
+        self.inner.as_raw_fd()
     }
 }
 
 // 实现 Device trait
 impl Device for FrameCapture {
-    type RxToken<'a> = FrameCaptureRxToken<'a>; 
-    type TxToken<'a> = FrameCaptureTxToken<'a>;
+    type RxToken<'a> = FrameCaptureRxToken<'a> where Self: 'a; 
+    type TxToken<'a> = FrameCaptureTxToken<'a> where Self: 'a;
 
     fn capabilities(&self) -> DeviceCapabilities {
         self.inner.capabilities()
     }
 
     fn receive(&mut self, _timestamp: Instant) -> Option<(Self::RxToken<'_>, Self::TxToken<'_>)> {
+        // 处理从设备接收的数据
+        let frames = self.frames.clone();
         self.inner.receive(_timestamp).map(|(rx, tx)| {
-            // 包装接收和发送令牌
             (
-                FrameCaptureRxToken { inner: rx },
-                FrameCaptureTxToken { inner: tx }
+                FrameCaptureRxToken { 
+                    inner: rx,
+                    device_frames: frames.clone(),
+                },
+                FrameCaptureTxToken { 
+                    inner: tx,
+                    device_frames: frames,
+                }
             )
         })
     }
 
     fn transmit(&mut self, _timestamp: Instant) -> Option<Self::TxToken<'_>> {
+        let frames = self.frames.clone();
         self.inner.transmit(_timestamp).map(|tx| {
-            FrameCaptureTxToken { inner: tx }
+            FrameCaptureTxToken { 
+                inner: tx,
+                device_frames: frames,
+            }
         })
     }
 }
@@ -53,6 +99,7 @@ impl Device for FrameCapture {
 // 包装接收令牌
 struct FrameCaptureRxToken<'a> {
     inner: <TunTapInterface as Device>::RxToken<'a>,
+    device_frames: Arc<Mutex<Vec<CapturedFrame>>>,
 }
 
 impl<'a> RxToken for FrameCaptureRxToken<'a> {
@@ -61,7 +108,14 @@ impl<'a> RxToken for FrameCaptureRxToken<'a> {
         F: FnOnce(&mut [u8]) -> R,
     {
         self.inner.consume(|buffer| {
-            // 打印接收到的帧内容
+            // 保存接收到的帧
+            let frame = CapturedFrame {
+                timestamp: Instant::now(),
+                direction: Direction::Rx,
+                data: buffer.to_vec(),
+            };
+            self.device_frames.lock().unwrap().push(frame);
+
             println!("Received frame:");
             print_frame(buffer);
             f(buffer)
@@ -72,6 +126,7 @@ impl<'a> RxToken for FrameCaptureRxToken<'a> {
 // 包装发送令牌
 struct FrameCaptureTxToken<'a> {
     inner: <TunTapInterface as Device>::TxToken<'a>,
+    device_frames: Arc<Mutex<Vec<CapturedFrame>>>,
 }
 
 impl<'a> TxToken for FrameCaptureTxToken<'a> {
@@ -81,9 +136,22 @@ impl<'a> TxToken for FrameCaptureTxToken<'a> {
     {
         self.inner.consume(len, |buffer| {
             let result = f(buffer);
-            // 打印发送的帧内容
+
+            // 保存发送的帧
+            let frame = CapturedFrame {
+                timestamp: Instant::now(),
+                direction: Direction::Tx,
+                data: buffer.to_vec(),
+            };
+            self.device_frames.lock().unwrap().push(frame);
+
             println!("Transmitting frame:");
             print_frame(buffer);
+
+            println!("Captured frames:");
+            for frame in self.device_frames.lock().unwrap().iter() {
+                println!("Timestamp: {:?}, Direction: {:?}, Data: {:?}", frame.timestamp, frame.direction, frame.data);
+            }
             result
         })
     }
@@ -104,14 +172,13 @@ fn print_frame(buffer: &[u8]) {
     }
 }
 
-// 修改主程序使用 FrameCapture
 fn main() {
     utils::setup_logging("");
 
     // 创建服务端线程
     let server_thread = thread::spawn(move || {
         let mut device1 = FrameCapture::new("tap1", Medium::Ethernet).unwrap();
-        let fd1 = device1.inner.as_raw_fd();
+        let fd1 = device1.as_raw_fd();
 
         // Create interface
         let mut config1 = Config::new(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]).into());
@@ -151,7 +218,6 @@ fn main() {
         let udp_handle1 = sockets1.add(udp_socket1);
 
         loop {
-            // thread::sleep(Duration::from_millis(100));
             println!("\x1b[35mServer loop\x1b[0m");
             {   
                 let timestamp = Instant::now();
@@ -182,13 +248,14 @@ fn main() {
                     .expect("wait error");        
             }
             thread::sleep(Duration::from_millis(10));
+            device1.print_captured_frames();
         }
     });
 
     // 创建客户端线程
     let client_thread = thread::spawn(move || {
         let mut device2 = FrameCapture::new("tap2", Medium::Ethernet).unwrap();
-        let fd2 = device2.inner.as_raw_fd();
+        let fd2 = device2.as_raw_fd();
 
         // Create interface
         let mut config2 = Config::new(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]).into());
@@ -253,11 +320,11 @@ fn main() {
                 phy_wait(fd2, iface2.poll_delay(timestamp, &sockets2))
                     .expect("wait error");
             }
-            thread::sleep(Duration::from_millis(1000));
+            thread::sleep(Duration::from_millis(10));
+            device2.print_captured_frames();
         }
     });
     
     server_thread.join().unwrap();
     client_thread.join().unwrap();
-    
 }

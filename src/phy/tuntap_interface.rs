@@ -1,7 +1,5 @@
-use std::cell::RefCell;
 use std::io;
 use std::os::unix::io::{AsRawFd, RawFd};
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::vec::Vec;
 
@@ -112,7 +110,7 @@ impl phy::TxToken for TxToken {
     where
         F: FnOnce(&mut [u8]) -> R,
     {
-        let mut lower = self.lower.borrow_mut();
+        let mut lower = self.lower.lock().unwrap();
         let mut buffer = vec![0; len];
         let result = f(&mut buffer);
 
