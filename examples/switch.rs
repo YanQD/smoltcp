@@ -39,7 +39,7 @@ pub struct Consumer<T> {
     buffer: Arc<RingBuffer<T>>,
 }
 
-// 共享同一个底层缓冲区
+//
 impl<T> RingBuffer<T> {
     pub fn new(capacity: usize) -> Self {
         let mut buffer = Vec::with_capacity(capacity);
@@ -78,6 +78,12 @@ impl<T> Producer<T> {
         println!("RingBuffer try_push: head={}, tail={}, next_tail={}, capacity={}", 
             head, tail, next_tail, buffer.capacity);
         
+        // 如果是Vec<u8>类型,打印帧内容
+        if let Some(frame_data) = unsafe { (&value as *const T).cast::<Vec<u8>>().as_ref() } {
+            println!("Pushing frame data:");
+            print_ethernet_frame(frame_data);
+        }
+        
         if next_tail == head {
             println!("RingBuffer is full!");
             return Err(value);
@@ -99,11 +105,11 @@ impl<T> Consumer<T> {
         let head = buffer.head.load(Ordering::Relaxed);
         let tail = buffer.tail.load(Ordering::Acquire);
         
-        println!("RingBuffer try_pop: head={}, tail={}, capacity={}", 
-            head, tail, buffer.capacity);
+        // println!("RingBuffer try_pop: head={}, tail={}, capacity={}", 
+        //     head, tail, buffer.capacity);
         
         if head == tail {
-            println!("RingBuffer is empty!");
+            // println!("RingBuffer is empty!");
             return None;
         }
 
@@ -111,6 +117,12 @@ impl<T> Consumer<T> {
             ptr::read(buffer.buffer[head].get())
         };
         
+        // 如果是Vec<u8>类型,打印帧内容
+        if let Some(frame_data) = unsafe { (&value as *const T).cast::<Vec<u8>>().as_ref() } {
+            println!("Popped frame data:");
+            print_ethernet_frame(frame_data);
+        }
+
         let next_head = (head + 1) % buffer.capacity;
         buffer.head.store(next_head, Ordering::Release);
         println!("RingBuffer pop success: new head={}", next_head);
@@ -127,7 +139,6 @@ pub struct PortSender {
 impl PortSender {
     pub fn send(&self, data: Vec<u8>) -> Result<(), Vec<u8>> {
         let result = self.producer.try_push(data);
-        println!("PortSender send: {:?}", self.producer);
         result
     }
 }
@@ -344,7 +355,7 @@ impl RxToken for FrameCaptureRxToken {
         F: FnOnce(&mut [u8]) -> R,
     {
         println!("\n[{}] Processing received frame of size: {}", self.name, self.buffer.len());
-        print_frame(&self.buffer);
+        // print_frame(&self.buffer);
         f(&mut self.buffer)
     }
 }
@@ -371,7 +382,8 @@ impl<'a> TxToken for FrameCaptureTxToken<'a> {
     }
 }
 
-fn print_frame(buffer: &[u8]) {
+// 帮助函数：打印以太网帧内容
+fn print_ethernet_frame(buffer: &[u8]) {
     println!("Frame length: {} bytes", buffer.len());
     println!("Raw data:");
     for (i, byte) in buffer.iter().enumerate() {
@@ -380,17 +392,60 @@ fn print_frame(buffer: &[u8]) {
             println!();
         }
     }
-    println!("\n");
+    println!();
 
     if buffer.len() >= 14 {
+        // 尝试解析以太网帧头
         if let Ok(frame) = EthernetFrame::new_checked(buffer) {
             println!("Ethernet Header:");
             println!("  Dst MAC: {}", frame.dst_addr());
             println!("  Src MAC: {}", frame.src_addr());
-            println!("  Type: {:?}\n", frame.ethertype());
+            println!("  Type: {:?}", frame.ethertype());
+            
+            // 打印负载长度
+            println!("  Payload length: {} bytes", frame.payload().len());
+            
+            // 简单打印前32字节的负载(如果有)
+            let payload = frame.payload();
+            if !payload.is_empty() {
+                println!("  Payload preview (first 32 bytes):");
+                for (i, byte) in payload.iter().take(32).enumerate() {
+                    print!("{:02x} ", byte);
+                    if (i + 1) % 16 == 0 {
+                        println!();
+                    }
+                }
+                println!();
+            }
+        } else {
+            println!("Failed to parse ethernet frame!");
         }
+    } else {
+        println!("Buffer too short for ethernet frame!");
     }
+    println!("----------------------------------------");
 }
+
+// fn print_frame(buffer: &[u8]) {
+//     println!("Frame length: {} bytes", buffer.len());
+//     println!("Raw data:");
+//     for (i, byte) in buffer.iter().enumerate() {
+//         print!("{:02x} ", byte);
+//         if (i + 1) % 16 == 0 {
+//             println!();
+//         }
+//     }
+//     println!("\n");
+
+//     if buffer.len() >= 14 {
+//         if let Ok(frame) = EthernetFrame::new_checked(buffer) {
+//             println!("Ethernet Header:");
+//             println!("  Dst MAC: {}", frame.dst_addr());
+//             println!("  Src MAC: {}", frame.src_addr());
+//             println!("  Type: {:?}\n", frame.ethertype());
+//         }
+//     }
+// }
 
 fn run_server(
     mut device: FrameCapture,
