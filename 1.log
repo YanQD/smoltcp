@@ -1,24 +1,183 @@
+warning: unexpected `cfg` condition value: `mips64el`
+  --> src/phy/sys/linux.rs:13:5
+   |
+13 |     target_arch = "mips64el",
+   |     ^^^^^^^^^^^^^^----------
+   |                   |
+   |                   help: there is a expected value with a similar name: `"mips64r6"`
+   |
+   = note: expected values for `target_arch` are: `aarch64`, `arm`, `arm64ec`, `avr`, `bpf`, `csky`, `hexagon`, `loongarch64`, `m68k`, `mips`, `mips32r6`, `mips64`, `mips64r6`, `msp430`, `nvptx64`, `powerpc`, `powerpc64`, `riscv32`, `riscv64`, `s390x`, `sparc`, `sparc64`, `wasm32`, `wasm64`, `x86`, `x86_64`, and `xtensa`
+   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+   = note: `#[warn(unexpected_cfgs)]` on by default
 
-[tap0] Checking for frames from switch
-[tap0] No frames from switch
-[tap0] No frames from tap device
+warning: unexpected `cfg` condition value: `mipsel`
+  --> src/phy/sys/linux.rs:14:5
+   |
+14 |     target_arch = "mipsel",
+   |     ^^^^^^^^^^^^^^--------
+   |                   |
+   |                   help: there is a expected value with a similar name: `"mips"`
+   |
+   = note: expected values for `target_arch` are: `aarch64`, `arm`, `arm64ec`, `avr`, `bpf`, `csky`, `hexagon`, `loongarch64`, `m68k`, `mips`, `mips32r6`, `mips64`, `mips64r6`, `msp430`, `nvptx64`, `powerpc`, `powerpc64`, `riscv32`, `riscv64`, `s390x`, `sparc`, `sparc64`, `wasm32`, `wasm64`, `x86`, `x86_64`, and `xtensa`
+   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition value: `powerpc64le`
+  --> src/phy/sys/linux.rs:17:5
+   |
+17 |     target_arch = "powerpc64le",
+   |     ^^^^^^^^^^^^^^-------------
+   |                   |
+   |                   help: there is a expected value with a similar name: `"powerpc64"`
+   |
+   = note: expected values for `target_arch` are: `aarch64`, `arm`, `arm64ec`, `avr`, `bpf`, `csky`, `hexagon`, `loongarch64`, `m68k`, `mips`, `mips32r6`, `mips64`, `mips64r6`, `msp430`, `nvptx64`, `powerpc`, `powerpc64`, `riscv32`, `riscv64`, `s390x`, `sparc`, `sparc64`, `wasm32`, `wasm64`, `x86`, `x86_64`, and `xtensa`
+   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition name: `fuzzing`
+   --> src/wire/icmpv4.rs:278:17
+    |
+278 |         if cfg!(fuzzing) {
+    |                 ^^^^^^^
+    |
+    = help: expected names are: `clippy`, `debug_assertions`, `doc`, `docsrs`, `doctest`, `feature`, `fmt_debug`, `miri`, `overflow_checks`, `panic`, `proc_macro`, `relocation_model`, `rustfmt`, `sanitize`, `sanitizer_cfi_generalize_pointers`, `sanitizer_cfi_normalize_integers`, `target_abi`, `target_arch`, `target_endian`, `target_env`, `target_family`, `target_feature`, `target_has_atomic`, `target_has_atomic_equal_alignment`, `target_has_atomic_load_store`, `target_os`, `target_pointer_width`, `target_thread_local`, `target_vendor`, `test`, `ub_checks`, `unix`, and `windows`
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(fuzzing)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(fuzzing)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition name: `fuzzing`
+   --> src/wire/icmpv6.rs:425:17
+    |
+425 |         if cfg!(fuzzing) {
+    |                 ^^^^^^^
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(fuzzing)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(fuzzing)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition name: `fuzzing`
+   --> src/wire/igmp.rs:123:17
+    |
+123 |         if cfg!(fuzzing) {
+    |                 ^^^^^^^
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(fuzzing)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(fuzzing)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition name: `fuzzing`
+   --> src/wire/ipv4.rs:453:17
+    |
+453 |         if cfg!(fuzzing) {
+    |                 ^^^^^^^
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(fuzzing)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(fuzzing)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition name: `fuzzing`
+   --> src/wire/tcp.rs:362:17
+    |
+362 |         if cfg!(fuzzing) {
+    |                 ^^^^^^^
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(fuzzing)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(fuzzing)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition name: `fuzzing`
+   --> src/wire/udp.rs:113:17
+    |
+113 |         if cfg!(fuzzing) {
+    |                 ^^^^^^^
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(fuzzing)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(fuzzing)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: field `0` is never read
+   --> src/iface/interface/mod.rs:597:22
+    |
+597 |             Dispatch(DispatchError),
+    |             -------- ^^^^^^^^^^^^^
+    |             |
+    |             field in this variant
+    |
+    = note: `#[warn(dead_code)]` on by default
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+    |
+597 |             Dispatch(()),
+    |                      ~~
+
+warning: `smoltcp` (lib) generated 10 warnings
+   Compiling smoltcp v0.11.0 (/home/yanlien/QCL/YanTD/smoltcp)
+warning: unused import: `debug`
+ --> examples/switch.rs:3:11
+  |
+3 | use log::{debug, info};
+  |           ^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: `smoltcp` (example "switch") generated 1 warning (run `cargo fix --example "switch"` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.23s
+     Running `target/debug/examples/switch`
+[0m[1734361631.067s] (iface::socket_set): [0]: adding[0m
+[0m[1734361631.067s] (iface::socket_set): [0]: adding[0m
+[32m[1734361631.067s] (switch): Server started on 192.168.69.11:6969[0m
+[32m[1734361631.067s] (switch): Client started on 192.168.69.22:7969[0m
+[0m[1734361631.067s] (iface::interface): socket_ingress started[0m
+[0m[1734361631.067s] (iface::interface): socket_ingress started[0m
 
 [tap1] Checking for frames from switch
-[tap1] No frames from switch
-[tap1] No frames from tap device
 
 [tap0] Checking for frames from switch
+PortReceiver try_recv: None
+PortReceiver try_recv: None
+[tap1] No frames from switch
+[tap0] No frames from switch
+[tap1] No frames from tap device
+[tap0] No frames from tap device
+[0m[1734361631.067s] (iface::interface): socket_egress started[0m
+[0m[1734361631.067s] (iface::interface): socket_egress started[0m
+[32m[1734361631.067s] (switch): Client socket bound to port 7969[0m
+[32m[1734361631.067s] (switch): Server socket bound to port 6969[0m
+[0m[1734361631.067s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+[32m[1734361631.067s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
+[0m[1734361631.067s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
 [tap0] No frames from switch
 [tap0] No frames from tap device
+[0m[1734361631.067s] (iface::interface): socket_egress started[0m
+[0m[1734361631.067s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
 [36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
 [33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
 [33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361631.067s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
 FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
 
 [tap0] Sending frame to switch from port 0
-RingBuffer try_push: head=0, tail=0, next_tail=1, capacity=128
 
 Pushing frame data:
+
 Frame length: 42 bytes
 Raw data:
 ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
@@ -35,8 +194,12 @@ Ethernet Header:
 ----------------------------------------
 RingBuffer push success: new tail=1
 [32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361631.067s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+[0m[1734361631.067s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+[32m[1734361631.067s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
 
 Popped frame data:
+
 Frame length: 42 bytes
 Raw data:
 ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
@@ -61,9 +224,9 @@ Source MAC: 02-00-00-00-00-02
 Destination MAC: ff-ff-ff-ff-ff-ff
 Switch: broadcasting frame
 Switch: sending to port 1
-RingBuffer try_push: head=0, tail=0, next_tail=1, capacity=4096
 
 Pushing frame data:
+
 Frame length: 42 bytes
 Raw data:
 ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
@@ -81,22 +244,136 @@ Ethernet Header:
 RingBuffer push success: new tail=1
 
 === MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
 MAC: 02-00-00-00-00-02, Port: 0
 ========================
 
+[0m[1734361631.074s] (iface::interface): socket_ingress started[0m
+
+[tap1] Checking for frames from switch
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=1
+PortReceiver try_recv: Some([255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11])
+frame [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]!
+
+[tap1] Received frame from switch, writing to tap
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[tap1] No frames from tap device
+[0m[1734361631.074s] (iface::interface): socket_ingress started[0m
+
+[0m[1734361631.074s] (iface::interface): socket_egress started[0m
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[32mRxToken consume: [51, 51, 0, 0, 0, 22, 2, 188, 234, 20, 201, 191, 134, 221, 96, 0, 0, 0, 0, 36, 0, 1, 254, 128, 0, 0, 0, 0, 0, 0, 0, 188, 234, 255, 254, 20, 201, 191, 255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 58, 0, 5, 2, 0, 0, 1, 0, 143, 0, 243, 164, 0, 0, 0, 1, 4, 0, 0, 0, 255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 20, 201, 191][0m
+[31mINGRESS: Received raw frame[0m
+
+[tap0] Processing received frame of size: 90
+[32mINGRESS: Received raw frame: [51, 51, 0, 0, 0, 22, 2, 188, 234, 20, 201, 191, 134, 221, 96, 0, 0, 0, 0, 36, 0, 1, 254, 128, 0, 0, 0, 0, 0, 0, 0, 188, 234, 255, 254, 20, 201, 191, 255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 58, 0, 5, 2, 0, 0, 1, 0, 143, 0, 243, 164, 0, 0, 0, 1, 4, 0, 0, 0, 255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 20, 201, 191][0m
+[0m[1734361631.074s] (wire::ipv6hbh): error when parsing hop-by-hop options: IPv6 Option PadN length=0 [0m
+[0m[1734361631.074s] (iface::interface::ipv6): packet IP address not for this interface[0m
 
 [tap0] Checking for frames from switch
+PortReceiver try_recv: None
 [tap0] No frames from switch
 [tap0] No frames from tap device
+[0m[1734361631.074s] (iface::interface): socket_egress started[0m
+[0m[1734361631.074s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361631.074s] (iface::interface): socket_egress started[0m
+[0m[1734361631.074s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+[32m[1734361631.074s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
+[0m[1734361631.147s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[32mRxToken consume: [51, 51, 0, 0, 0, 22, 2, 188, 234, 20, 201, 191, 134, 221, 96, 0, 0, 0, 0, 36, 0, 1, 254, 128, 0, 0, 0, 0, 0, 0, 0, 188, 234, 255, 254, 20, 201, 191, 255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 58, 0, 5, 2, 0, 0, 1, 0, 143, 0, 243, 164, 0, 0, 0, 1, 4, 0, 0, 0, 255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 20, 201, 191][0m
+[31mINGRESS: Received raw frame[0m
+
+[tap0] Processing received frame of size: 90
+[32mINGRESS: Received raw frame: [51, 51, 0, 0, 0, 22, 2, 188, 234, 20, 201, 191, 134, 221, 96, 0, 0, 0, 0, 36, 0, 1, 254, 128, 0, 0, 0, 0, 0, 0, 0, 188, 234, 255, 254, 20, 201, 191, 255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 58, 0, 5, 2, 0, 0, 1, 0, 143, 0, 243, 164, 0, 0, 0, 1, 4, 0, 0, 0, 255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 20, 201, 191][0m
+[0m[1734361631.147s] (wire::ipv6hbh): error when parsing hop-by-hop options: IPv6 Option PadN length=0 [0m
+[0m[1734361631.147s] (iface::interface::ipv6): packet IP address not for this interface[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361631.147s] (iface::interface): socket_egress started[0m
+[0m[1734361631.147s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361631.147s] (iface::interface): socket_egress started[0m
+[0m[1734361631.147s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+[32m[1734361631.147s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
+[0m[1734361631.407s] (iface::interface): socket_ingress started[0m
+
+[tap1] Checking for frames from switch
+PortReceiver try_recv: None
+[tap1] No frames from switch
+[32mRxToken consume: [51, 51, 0, 0, 0, 22, 98, 96, 139, 84, 186, 209, 134, 221, 96, 0, 0, 0, 0, 36, 0, 1, 254, 128, 0, 0, 0, 0, 0, 0, 96, 96, 139, 255, 254, 84, 186, 209, 255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 58, 0, 5, 2, 0, 0, 1, 0, 143, 0, 16, 93, 0, 0, 0, 1, 4, 0, 0, 0, 255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 84, 186, 209][0m
+[31mINGRESS: Received raw frame[0m
+
+[tap1] Processing received frame of size: 90
+[32mINGRESS: Received raw frame: [51, 51, 0, 0, 0, 22, 98, 96, 139, 84, 186, 209, 134, 221, 96, 0, 0, 0, 0, 36, 0, 1, 254, 128, 0, 0, 0, 0, 0, 0, 96, 96, 139, 255, 254, 84, 186, 209, 255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 58, 0, 5, 2, 0, 0, 1, 0, 143, 0, 16, 93, 0, 0, 0, 1, 4, 0, 0, 0, 255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 84, 186, 209][0m
+[0m[1734361631.407s] (wire::ipv6hbh): error when parsing hop-by-hop options: IPv6 Option PadN length=0 [0m
+[0m[1734361631.407s] (iface::interface::ipv6): packet IP address not for this interface[0m
+
+[tap1] Checking for frames from switch
+PortReceiver try_recv: None
+[tap1] No frames from switch
+[tap1] No frames from tap device
+[0m[1734361631.407s] (iface::interface): socket_egress started[0m
+[0m[1734361631.407s] (iface::interface): socket_ingress started[0m
+
+[tap1] Checking for frames from switch
+PortReceiver try_recv: None
+[tap1] No frames from switch
+[tap1] No frames from tap device
+[0m[1734361631.407s] (iface::interface): socket_egress started[0m
+[0m[1734361632.067s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361632.067s] (iface::interface): socket_egress started[0m
+[0m[1734361632.067s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361632.067s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
 [36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
 [33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
 [33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361632.067s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
 FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
 
 [tap0] Sending frame to switch from port 0
-RingBuffer try_push: head=1, tail=1, next_tail=2, capacity=128
 
 Pushing frame data:
+
 Frame length: 42 bytes
 Raw data:
 ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
@@ -113,8 +390,12 @@ Ethernet Header:
 ----------------------------------------
 RingBuffer push success: new tail=2
 [32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361632.067s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+[0m[1734361632.067s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+[32m[1734361632.067s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
 
 Popped frame data:
+
 Frame length: 42 bytes
 Raw data:
 ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
@@ -139,9 +420,9 @@ Source MAC: 02-00-00-00-00-02
 Destination MAC: ff-ff-ff-ff-ff-ff
 Switch: broadcasting frame
 Switch: sending to port 1
-RingBuffer try_push: head=0, tail=1, next_tail=2, capacity=4096
 
 Pushing frame data:
+
 Frame length: 42 bytes
 Raw data:
 ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
@@ -159,6 +440,1703 @@ Ethernet Header:
 RingBuffer push success: new tail=2
 
 === MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361633.068s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361633.068s] (iface::interface): socket_egress started[0m
+[0m[1734361633.068s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361633.069s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361633.069s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=3
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361633.069s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+[0m[1734361633.069s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+[32m[1734361633.069s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=3
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=3
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361634.070s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361634.070s] (iface::interface): socket_egress started[0m
+[0m[1734361634.070s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361634.070s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361634.070s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=4
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+[0m[1734361634.070s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+[0m[1734361634.070s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+[32m[1734361634.070s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=4
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=4
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361635.071s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361635.071s] (iface::interface): socket_egress started[0m
+[0m[1734361635.071s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361635.071s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361635.071s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=5
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361635.071s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+[0m[1734361635.071s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+[32m[1734361635.071s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=5
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=5
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361636.072s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361636.072s] (iface::interface): socket_egress started[0m
+[0m[1734361636.072s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361636.072s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361636.072s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=6
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361636.072s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+[0m[1734361636.072s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+[32m[1734361636.072s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=6
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=6
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361637.072s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361637.072s] (iface::interface): socket_egress started[0m
+[0m[1734361637.072s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361637.072s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361637.072s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=7
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361637.072s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+[0m[1734361637.072s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+[32m[1734361637.072s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=7
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=7
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361638.074s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361638.074s] (iface::interface): socket_egress started[0m
+[0m[1734361638.074s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361638.074s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361638.074s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=0
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361638.074s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+[0m[1734361638.074s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+[32m[1734361638.074s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=0
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=0
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361639.074s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361639.074s] (iface::interface): socket_egress started[0m
+[0m[1734361639.074s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361639.074s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361639.074s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=1
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361639.074s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+[0m[1734361639.074s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+[32m[1734361639.074s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=1
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer is full!
+Switch: failed to send to port 1: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361640.075s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361640.075s] (iface::interface): socket_egress started[0m
+[0m[1734361640.075s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361640.075s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361640.075s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=2
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361640.075s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+[0m[1734361640.075s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+[32m[1734361640.075s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=2
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer is full!
+Switch: failed to send to port 1: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361641.076s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361641.076s] (iface::interface): socket_egress started[0m
+[0m[1734361641.076s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361641.076s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361641.076s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=3
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361641.077s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+[0m[1734361641.077s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+[32m[1734361641.077s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=3
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer is full!
+Switch: failed to send to port 1: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361642.077s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361642.077s] (iface::interface): socket_egress started[0m
+[0m[1734361642.077s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361642.077s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361642.077s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=4
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361642.077s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+[0m[1734361642.077s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+[32m[1734361642.077s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=4
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer is full!
+Switch: failed to send to port 1: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361643.078s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361643.079s] (iface::interface): socket_egress started[0m
+[0m[1734361643.079s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361643.079s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361643.079s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=5
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361643.079s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+[0m[1734361643.079s] (socket::udp): udp:*:7969:192.168.69.11:6969: buffer to send 18 octets[0m
+[32m[1734361643.079s] (switch): Client sent: [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33] to (Ipv4(Address([192, 168, 69, 11])), 6969)[0m
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=5
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer is full!
+Switch: failed to send to port 1: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361644.080s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361644.080s] (iface::interface): socket_egress started[0m
+[0m[1734361644.080s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361644.080s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361644.080s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=6
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361644.080s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+Failed to send datas: buffer full
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=6
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer is full!
+Switch: failed to send to port 1: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361645.081s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361645.081s] (iface::interface): socket_egress started[0m
+[0m[1734361645.081s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361645.081s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361645.081s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=7
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361645.081s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+Failed to send datas: buffer full
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=7
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer is full!
+Switch: failed to send to port 1: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361646.081s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361646.081s] (iface::interface): socket_egress started[0m
+[0m[1734361646.081s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361646.081s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361646.081s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=0
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361646.081s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+Failed to send datas: buffer full
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=0
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer is full!
+Switch: failed to send to port 1: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361647.082s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361647.082s] (iface::interface): socket_egress started[0m
+[0m[1734361647.082s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361647.082s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361647.082s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=1
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361647.082s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+Failed to send datas: buffer full
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=1
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer is full!
+Switch: failed to send to port 1: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361648.084s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361648.084s] (iface::interface): socket_egress started[0m
+[0m[1734361648.084s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361648.084s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361648.084s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=2
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361648.084s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+Failed to send datas: buffer full
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=2
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer is full!
+Switch: failed to send to port 1: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361649.085s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361649.085s] (iface::interface): socket_egress started[0m
+[0m[1734361649.085s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361649.085s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361649.085s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=3
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361649.085s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+Failed to send datas: buffer full
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=3
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer is full!
+Switch: failed to send to port 1: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361650.086s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361650.086s] (iface::interface): socket_egress started[0m
+[0m[1734361650.086s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361650.086s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361650.086s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=4
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361650.086s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+Failed to send datas: buffer full
+
+Popped frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=4
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer is full!
+Switch: failed to send to port 1: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
+MAC: 02-00-00-00-00-02, Port: 0
+========================
+
+[0m[1734361651.087s] (iface::interface): socket_ingress started[0m
+
+[tap0] Checking for frames from switch
+PortReceiver try_recv: None
+[tap0] No frames from switch
+[tap0] No frames from tap device
+[0m[1734361651.087s] (iface::interface): socket_egress started[0m
+[0m[1734361651.087s] (iface::socket_meta): #0: neighbor 192.168.69.11 silence timer expired, rediscovering[0m
+[0m[1734361651.087s] (socket::udp): udp:*:7969:192.168.69.11:6969: sending 18 octets[0m
+[36mEGRESS: Attempting to send packet: Ipv4(PacketV4 { header: Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 }, payload: Udp(Repr { src_port: 7969, dst_port: 6969 }, [72, 101, 108, 108, 111, 32, 102, 114, 111, 109, 32, 115, 101, 110, 100, 101, 114, 33]) })[0m
+[33mEGRESS: Neighbor address: Some(Ipv4(Address([192, 168, 69, 11])))[0m
+[33mIP representation: Ipv4(Repr { src_addr: Address([192, 168, 69, 22]), dst_addr: Address([192, 168, 69, 11]), next_header: Udp, payload_len: 26, hop_limit: 64 })[0m
+[0m[1734361651.087s] (iface::interface): address 192.168.69.11 not in neighbor cache, sending ARP request[0m
+FrameCaptureTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+[tap0] Sending frame to switch from port 0
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer push success: new tail=5
+[32mTxToken consume: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11][0m
+[0m[1734361651.087s] (iface::socket_meta): #0: neighbor 192.168.69.11 missing, silencing until t+1.000s[0m
+
+Popped frame data:
+
+Frame length: 42 bytes
+Failed to send datas: buffer full
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer pop success: new head=5
+Switch processing frame from port 0
+
+Switch processing frame of size 42 from port 0
+
+Switch: received frame on port 0
+Source MAC: 02-00-00-00-00-02
+Destination MAC: ff-ff-ff-ff-ff-ff
+Switch: broadcasting frame
+Switch: sending to port 1
+
+Pushing frame data:
+
+Frame length: 42 bytes
+Raw data:
+ff ff ff ff ff ff 02 00 00 00 00 02 08 06 00 01 
+08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 45 16 
+ff ff ff ff ff ff c0 a8 45 0b 
+Ethernet Header:
+  Dst MAC: ff-ff-ff-ff-ff-ff
+  Src MAC: 02-00-00-00-00-02
+  Type: Arp
+  Payload length: 28 bytes
+  Payload preview (first 32 bytes):
+00 01 08 00 06 04 00 01 02 00 00 00 00 02 c0 a8 
+45 16 ff ff ff ff ff ff c0 a8 45 0b 
+----------------------------------------
+RingBuffer is full!
+Switch: failed to send to port 1: [255, 255, 255, 255, 255, 255, 2, 0, 0, 0, 0, 2, 8, 6, 0, 1, 8, 0, 6, 4, 0, 1, 2, 0, 0, 0, 0, 2, 192, 168, 69, 22, 255, 255, 255, 255, 255, 255, 192, 168, 69, 11]
+
+=== MAC Address Table ===
+MAC: 02-00-00-00-00-01, Port: 1
 MAC: 02-00-00-00-00-02, Port: 0
 ========================
 

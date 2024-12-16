@@ -1,6 +1,6 @@
 mod utils;
 
-use log::info;
+use log::{debug, info};
 use std::collections::HashMap;
 use std::os::unix::io::AsRawFd;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -75,8 +75,8 @@ impl<T> Producer<T> {
         let next_tail = (tail + 1) % buffer.capacity;
         let head = buffer.head.load(Ordering::Acquire);
         
-        println!("RingBuffer try_push: head={}, tail={}, next_tail={}, capacity={}", 
-            head, tail, next_tail, buffer.capacity);
+        // println!("RingBuffer try_push: head={}, tail={}, next_tail={}, capacity={}", 
+        //     head, tail, next_tail, buffer.capacity);
         
         // 如果是Vec<u8>类型,打印帧内容
         if let Some(frame_data) = unsafe { (&value as *const T).cast::<Vec<u8>>().as_ref() } {
@@ -105,9 +105,10 @@ impl<T> Consumer<T> {
         let head = buffer.head.load(Ordering::Relaxed);
         let tail = buffer.tail.load(Ordering::Acquire);
         
+        // debug!("\x1b[35mtest test test\x1b[0m");
         // println!("RingBuffer try_pop: head={}, tail={}, capacity={}", 
         //     head, tail, buffer.capacity);
-        
+
         if head == tail {
             // println!("RingBuffer is empty!");
             return None;
@@ -149,7 +150,9 @@ pub struct PortReceiver {
 
 impl PortReceiver {
     pub fn try_recv(&self) -> Option<Vec<u8>> {
-        self.consumer.try_pop()
+        let result = self.consumer.try_pop();
+        println!("PortReceiver try_recv: {:?}", result);
+        result
     }
 }
 
@@ -181,6 +184,10 @@ impl Switch {
             mac_table: Arc::new(Mutex::new(HashMap::new())),
             ports: Vec::new(),
         }
+    }
+
+    fn add_mac_table(&mut self, mac_addr: EthernetAddress, port_no: usize) {
+        self.mac_table.lock().insert(mac_addr, port_no);
     }
 
     fn add_port(&mut self, mac_addr: EthernetAddress, sender: PortSender) -> usize {
@@ -256,7 +263,9 @@ struct FrameCapture {
     inner: Arc<Mutex<TunTapInterface>>,
     name: String,
     port_no: usize,
+    // 发送通道：发送 (数据包, 源端口号) 到交换机
     frame_sender: Producer<(Vec<u8>, usize)>,
+    // 接收通道：从交换机接收数据包
     frame_receiver: PortReceiver,
 }
 
@@ -347,6 +356,7 @@ impl Device for FrameCapture {
     }
 }
 
+// 接收
 struct FrameCaptureRxToken {
     buffer: Vec<u8>,
     name: String,
@@ -363,6 +373,7 @@ impl RxToken for FrameCaptureRxToken {
     }
 }
 
+// 发送
 struct FrameCaptureTxToken<'a> {
     inner: <TunTapInterface as Device>::TxToken<'a>,
     sender: &'a Producer<(Vec<u8>, usize)>,
@@ -594,20 +605,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut switch = Switch::new();
     
     // 创建用于向交换机发送数据的环形缓冲区
-    let switch_buffer = RingBuffer::new(128);
+    let switch_buffer = RingBuffer::new(8);
     let (switch_producer, switch_consumer) = switch_buffer.split();
 
     // 为客户端创建通道
-    let (client_sender, client_receiver) = create_port_channel(4096);
+    let (client_sender, client_receiver) = create_port_channel(8);
     let mut client_capture = FrameCapture::new(
-        "tap0",
+        "tap2",
         Medium::Ethernet,
         switch_producer.clone(),
         client_receiver,
     )?;
 
     // 为服务端创建通道
-    let (server_sender, server_receiver) = create_port_channel(4096);
+    let (server_sender, server_receiver) = create_port_channel(8);
     let mut server_capture = FrameCapture::new(
         "tap1",
         Medium::Ethernet,
@@ -628,6 +639,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 设置端口号
     client_capture.set_port_no(client_port);
     server_capture.set_port_no(server_port);
+
+    switch.add_mac_table(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]), client_port);
+    switch.add_mac_table(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]), server_port);
 
     // 启动交换机线程
     let switch_running = running.clone();
