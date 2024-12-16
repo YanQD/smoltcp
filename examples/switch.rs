@@ -80,7 +80,7 @@ impl<T> Producer<T> {
         
         // 如果是Vec<u8>类型,打印帧内容
         if let Some(frame_data) = unsafe { (&value as *const T).cast::<Vec<u8>>().as_ref() } {
-            println!("Pushing frame data:");
+            println!("\nPushing frame data:");
             print_ethernet_frame(frame_data);
         }
         
@@ -117,9 +117,9 @@ impl<T> Consumer<T> {
             ptr::read(buffer.buffer[head].get())
         };
         
-        // 如果是Vec<u8>类型,打印帧内容
+        // 如果是Vec<u8>类型，打印帧内容
         if let Some(frame_data) = unsafe { (&value as *const T).cast::<Vec<u8>>().as_ref() } {
-            println!("Popped frame data:");
+            println!("\nPopped frame data:");
             print_ethernet_frame(frame_data);
         }
 
@@ -297,10 +297,13 @@ impl Device for FrameCapture {
     fn receive(&mut self, timestamp: Instant) -> Option<(Self::RxToken<'_>, Self::TxToken<'_>)> {
         println!("\n[{}] Checking for frames from switch", self.name);
         // 优先检查是否有来自交换机的数据
+
+        // 问题出现的地方
         if let Some(frame) = self.frame_receiver.try_recv() {
+            println!("frame {:?}!", frame);
             println!("\n[{}] Received frame from switch, writing to tap", self.name);
             // 直接写入到tap设备
-            if let Some(tx) = self.inner.lock().transmit(timestamp) {
+            if let Some((_rx, tx)) = self.inner.lock().receive(timestamp) {
                 tx.consume(frame.len(), |buf| {
                     buf.copy_from_slice(&frame);
                 });
@@ -384,7 +387,7 @@ impl<'a> TxToken for FrameCaptureTxToken<'a> {
 
 // 帮助函数：打印以太网帧内容
 fn print_ethernet_frame(buffer: &[u8]) {
-    println!("Frame length: {} bytes", buffer.len());
+    println!("\nFrame length: {} bytes", buffer.len());
     println!("Raw data:");
     for (i, byte) in buffer.iter().enumerate() {
         print!("{:02x} ", byte);
@@ -474,11 +477,11 @@ fn run_server(
         .unwrap();
 
     let udp_rx_buffer = udp::PacketBuffer::new(
-        vec![udp::PacketMetadata::EMPTY, udp::PacketMetadata::EMPTY],
+        vec![udp::PacketMetadata::EMPTY; 16],
         vec![0; 65535],
     );
     let udp_tx_buffer = udp::PacketBuffer::new(
-        vec![udp::PacketMetadata::EMPTY, udp::PacketMetadata::EMPTY],
+        vec![udp::PacketMetadata::EMPTY; 16],
         vec![0; 65535],
     );
     let udp_socket = udp::Socket::new(udp_rx_buffer, udp_tx_buffer);
@@ -539,11 +542,11 @@ fn run_client(
         .unwrap();
 
     let udp_rx_buffer = udp::PacketBuffer::new(
-        vec![udp::PacketMetadata::EMPTY, udp::PacketMetadata::EMPTY],
+        vec![udp::PacketMetadata::EMPTY; 16],
         vec![0; 65535],
     );
     let udp_tx_buffer = udp::PacketBuffer::new(
-        vec![udp::PacketMetadata::EMPTY, udp::PacketMetadata::EMPTY],
+        vec![udp::PacketMetadata::EMPTY; 16],
         vec![0; 65535],
     );
     let udp_socket = udp::Socket::new(udp_rx_buffer, udp_tx_buffer);
