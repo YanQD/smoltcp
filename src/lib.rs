@@ -1,5 +1,5 @@
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
-#![deny(unsafe_code)]
+// #![deny(unsafe_code)]
 
 //! The _smoltcp_ library is built in a layered structure, with the layers corresponding
 //! to the levels of API abstraction. Only the highest layers would be used by a typical

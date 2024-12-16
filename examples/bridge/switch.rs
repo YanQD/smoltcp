@@ -330,18 +330,16 @@ impl Switch {
 
         if let Some(port) = self.ports.get_mut(&num) {
             let fd = port.port_device.lock().as_raw_fd();
-            {
-                let port_iface: &mut Interface = &mut port.port_iface;
-                let mut device = port.port_device.lock();
-                port_iface.poll(timestamp, &mut *device, sockets);
-                drop(device);
-            }
+            let port_iface: &mut Interface = &mut port.port_iface;
+            let mut device = port.port_device.lock();
+            port_iface.poll(timestamp, &mut *device, sockets);
+            drop(device);
 
             // 获取并保存需要转发的帧
             frames_to_forward = port.get_frames();
 
             for i in 0..frames_to_forward.len() {
-                debug!("Frame to forward: {:?}", frames_to_forward[i]);
+                debug!("Frame to forward: {i}, {:?}", frames_to_forward[i]);
             }
 
             f(sockets);
@@ -362,13 +360,10 @@ impl Switch {
                         // 使用 receive 获取接收 token
                         if let Some((rx, _tx)) = device.receive(timestamp) {
                             rx.consume(|buffer| {
-                                buffer.copy_from_slice(&frame.data);    
+                                buffer.copy_from_slice(&frame.data);
                             });
                         }
                     }
-
-                    // // 让目标端口的接口处理新收到的数据
-                    // port.port_iface.poll(timestamp, &mut *device, sockets);
                     
                     drop(device);
                 }

@@ -125,18 +125,18 @@ impl<'a> RxToken for FrameCaptureRxToken<'a> {
         F: FnOnce(&mut [u8]) -> R,
     {
         self.inner.consume(|buffer| {
-            // 保存接收到的帧
-            let frame = CapturedFrame {
-                timestamp: Instant::now(),
-                direction: Direction::Rx,
-                data: buffer.to_vec(),
-            };
+            // // 保存接收到的帧
+            // let frame = CapturedFrame {
+            //     timestamp: Instant::now(),
+            //     direction: Direction::Rx,
+            //     data: buffer.to_vec(),
+            // };
 
-            // 保存发送的数据到共享的 frames 中
-            let mut frames = self.device_frames.lock();
-            frames.push(frame);
+            // // 保存发送的数据到共享的 frames 中
+            // let mut frames = self.device_frames.lock();
+            // frames.push(frame);
 
-            println!("Received frame:");
+            // println!("Received frame:");
             print_frame(buffer);
             f(buffer)
         })

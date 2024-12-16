@@ -517,6 +517,7 @@ impl Interface {
 
         debug!("socket_ingress started");
         while let Some((rx_token, tx_token)) = device.receive(self.inner.now) {
+            println!("\x1b[31mINGRESS: Received raw frame\x1b[0m");
             rx_token.preprocess(sockets);
             let rx_meta = rx_token.meta();
             rx_token.consume(|frame| {

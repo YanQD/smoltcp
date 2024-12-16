@@ -48,7 +48,7 @@ fn main() {
 
     // 创建两个TAP设备作为测试端口
     // let device0 = FrameCapture::new("tap2", Medium::Ethernet).unwrap();
-    let mut device1 = FrameCapture::new("tap2", Medium::Ethernet).unwrap();
+    let mut device1 = FrameCapture::new("tap0", Medium::Ethernet).unwrap();
     let mut device2 = FrameCapture::new("tap1", Medium::Ethernet).unwrap();
 
     // let config0 = Config::new(HardwareAddress::Ethernet(get_port1_mac()));
@@ -149,6 +149,7 @@ fn main() {
                     }
         
                     let data: &[u8; 18] = b"Hello from sender!";
+                    println!("\x1b[35mClient First: Sending data {:?}\x1b[0m", data);
                     match socket1.send_slice(data, (IpAddress::v4(192, 168, 69, 7), 7979)) {
                         Ok(_) => println!("\x1b[35mClient First: Sent data {:?} to {}:{}\x1b[0m", data, IpAddress::v4(192, 168, 69, 7), 7979),
                         Err(e) => println!("Failed to send data: {}", e),
@@ -183,6 +184,8 @@ fn main() {
                         socket.bind(7979).unwrap();
                         println!("\x1b[35mReceiver socket bound to port 7979\x1b[0m");
                     }
+
+                    println!("test test test");
             
                     let server = match socket.recv() {
                         Ok((data, endpoint)) => {

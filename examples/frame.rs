@@ -12,13 +12,32 @@ use smoltcp::socket::udp;
 use smoltcp::time::Instant;
 use smoltcp::wire::{EthernetAddress, IpAddress, IpCidr, Ipv4Address, Ipv6Address};
 
+#[derive(Debug, Clone)]
 struct CapturedFrame {
     timestamp: Instant,
     direction: Direction,
     data: Vec<u8>,
 }
 
-#[derive(Debug)]
+impl CapturedFrame {
+    // pub fn new() -> Self {
+    //     CapturedFrame {
+    //         timestamp: Instant::now(),
+    //         direction: Direction::NoDefined,
+    //         data: Vec::new(),
+    //     }
+    // }
+
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+}
+
+#[derive(Debug, Clone)]
 enum Direction {
     Tx,
     Rx,
@@ -28,7 +47,6 @@ struct FrameCapture {
     inner: TunTapInterface,
     frames: Arc<Mutex<Vec<CapturedFrame>>>,
 }
-
 
 impl FrameCapture {
     fn new(name: &str, medium: Medium) -> Result<Self, Box<dyn std::error::Error>> {
@@ -56,6 +74,14 @@ impl FrameCapture {
     
     fn as_raw_fd(&self) -> i32 {
         self.inner.as_raw_fd()
+    }
+
+    pub fn get_frames(&self) -> Vec<CapturedFrame> {
+        self.frames.lock().unwrap().clone()
+    }
+
+    pub fn clear_frames(&self) {
+        self.frames.lock().unwrap().clear();
     }
 }
 
@@ -148,7 +174,7 @@ impl<'a> TxToken for FrameCaptureTxToken<'a> {
             println!("Transmitting frame:");
             print_frame(buffer);
 
-            println!("Captured frames:");
+            println!("Transmit: Captured frames:");
             for frame in self.device_frames.lock().unwrap().iter() {
                 println!("Timestamp: {:?}, Direction: {:?}, Data: {:?}", frame.timestamp, frame.direction, frame.data);
             }
@@ -159,15 +185,15 @@ impl<'a> TxToken for FrameCaptureTxToken<'a> {
 
 // 帮助函数：打印帧内容
 fn print_frame(buffer: &[u8]) {
-    println!("Frame length: {} bytes", buffer.len());
+    println!("\x1b[36mFrame length: {} bytes\x1b[0m", buffer.len());
     println!("\x1b[36mRaw data: {:?}\x1b[0m", buffer);
     if buffer.len() >= 14 {  // 以太网头部是14字节
-        println!("Ethernet Header:");
-        println!("Dest MAC: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+        println!("\x1b[36mEthernet Header:\x1b[0m");
+        println!("\x1b[36mDest MAC: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}\x1b[0m",
             buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5]);
-        println!("Src MAC: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+        println!("\x1b[36mSrc MAC: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}\x1b[0m",
             buffer[6], buffer[7], buffer[8], buffer[9], buffer[10], buffer[11]);
-        println!("Type: {:02x}{:02x}",
+        println!("\x1b[36mType: {:02x}{:02x}\x1b[0m",
             buffer[12], buffer[13]);
     }
 }

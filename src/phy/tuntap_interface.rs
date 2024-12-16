@@ -20,6 +20,9 @@ impl AsRawFd for TunTapInterface {
     }
 }
 
+unsafe impl Send for sys::TunTapInterfaceDesc {}
+unsafe impl Sync for sys::TunTapInterfaceDesc {}
+
 impl TunTapInterface {
     /// Attaches to a TUN/TAP interface called `name`, or creates it if it does not exist.
     ///
