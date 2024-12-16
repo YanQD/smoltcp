@@ -341,7 +341,6 @@ impl Switch {
             frames_to_forward = port.get_frames();
 
             for i in 0..frames_to_forward.len() {
-                debug!("Test Test Test");
                 debug!("Frame to forward: {:?}", frames_to_forward[i]);
             }
 
@@ -351,25 +350,31 @@ impl Switch {
             phy_wait(fd, port_iface.poll_delay(timestamp, &sockets)).expect("wait error");
         }
     
-        // 第二步：转发数据
         if !frames_to_forward.is_empty() {
             println!("Got {} frames to forward", frames_to_forward.len());
             for (port_num, port) in self.ports.iter_mut() {
                 println!("Bridge: port_num {:?}", port_num);
                 if port_num != &num {
+                    let mut device = port.port_device.lock();
+
                     for frame in &frames_to_forward {
-                        let mut device = port.port_device.lock();
-                        if let Some(tx) = device.transmit(timestamp) {
-                            tx.consume(frame.data.len(), |buffer| {
-                                buffer.copy_from_slice(&frame.data);
+                        println!("{:?}", frame);
+                        // 使用 receive 获取接收 token
+                        if let Some((rx, _tx)) = device.receive(timestamp) {
+                            rx.consume(|buffer| {
+                                buffer.copy_from_slice(&frame.data);    
                             });
                         }
-                        drop(device);
                     }
+
+                    // // 让目标端口的接口处理新收到的数据
+                    // port.port_iface.poll(timestamp, &mut *device, sockets);
+                    
+                    drop(device);
                 }
             }
-
-            // 清空转发的帧
+        
+            // 清空已转发的帧
             println!("Clearing frames");
             for (_port_num, port) in self.ports.iter_mut() {
                 port.with_device_mut(|device| {

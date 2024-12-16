@@ -48,14 +48,14 @@ fn main() {
 
     // 创建两个TAP设备作为测试端口
     // let device0 = FrameCapture::new("tap2", Medium::Ethernet).unwrap();
-    let mut device1 = FrameCapture::new("tap1", Medium::Ethernet).unwrap();
-    let mut device2 = FrameCapture::new("tap0", Medium::Ethernet).unwrap();
+    let mut device1 = FrameCapture::new("tap2", Medium::Ethernet).unwrap();
+    let mut device2 = FrameCapture::new("tap1", Medium::Ethernet).unwrap();
 
     // let config0 = Config::new(HardwareAddress::Ethernet(get_port1_mac()));
     let config1 = Config::new(HardwareAddress::Ethernet(get_port2_mac()));
     let config2 = Config::new(HardwareAddress::Ethernet(get_port3_mac()));
 
-    let mut iface1 = Interface::new(config1.clone(), &mut device1, Instant::now());
+    let mut iface1 = Interface::new(config1, &mut device1, Instant::now());
     iface1.update_ip_addrs(|ip_addrs| {
         ip_addrs
             .push(IpCidr::new(IpAddress::v4(192, 168, 69, 6), 24))
@@ -73,7 +73,7 @@ fn main() {
         .add_default_ipv6_route(Ipv6Address::new(0xfe80, 0, 0, 0, 0, 0, 0, 0x100))
         .unwrap();
 
-    let mut iface2 = Interface::new(config2.clone(), &mut device2, Instant::now());
+    let mut iface2 = Interface::new(config2, &mut device2, Instant::now());
     iface2.update_ip_addrs(|ip_addrs| {
         ip_addrs
             .push(IpCidr::new(IpAddress::v4(192, 168, 69, 7), 24))
@@ -149,8 +149,8 @@ fn main() {
                     }
         
                     let data: &[u8; 18] = b"Hello from sender!";
-                    match socket1.send_slice(data, (IpAddress::v4(192, 168, 69, 4), 7979)) {
-                        Ok(_) => println!("\x1b[35mClient First: Sent data {:?} to {}:{}\x1b[0m", data, IpAddress::v4(192, 168, 69, 4), 7979),
+                    match socket1.send_slice(data, (IpAddress::v4(192, 168, 69, 7), 7979)) {
+                        Ok(_) => println!("\x1b[35mClient First: Sent data {:?} to {}:{}\x1b[0m", data, IpAddress::v4(192, 168, 69, 7), 7979),
                         Err(e) => println!("Failed to send data: {}", e),
                     }
                 }
