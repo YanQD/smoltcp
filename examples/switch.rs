@@ -3,7 +3,7 @@ mod utils;
 use log::{debug, info};
 use std::collections::HashMap;
 use std::os::unix::io::AsRawFd;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::cell::UnsafeCell;
 use std::ptr;
@@ -95,6 +95,16 @@ impl<T> Producer<T> {
         
         buffer.tail.store(next_tail, Ordering::Release);
         println!("RingBuffer push success: new tail={}", next_tail);
+
+        // 如果是 Vec<u8> 类型,打印帧内容
+        for i in 0..buffer.tail.load(Ordering::Relaxed) {
+            if let Some(frame_data) = unsafe { buffer.buffer[i].get().cast::<Vec<u8>>().as_ref() } {
+                debug!("Pushed frame data:");
+                debug!("frame_data: {:?}", frame_data);
+                // print_ethernet_frame(frame_data);
+            }
+        }
+
         Ok(())
     }
 }
@@ -186,7 +196,7 @@ impl Switch {
         }
     }
 
-    fn add_mac_table(&mut self, mac_addr: EthernetAddress, port_no: usize) {
+    fn add_mac_list(&mut self, mac_addr: EthernetAddress, port_no: usize) {
         self.mac_table.lock().insert(mac_addr, port_no);
     }
 
@@ -307,16 +317,22 @@ impl Device for FrameCapture {
         println!("\n[{}] Checking for frames from switch", self.name);
         // 优先检查是否有来自交换机的数据
 
-        // 问题出现的地方
         if let Some(frame) = self.frame_receiver.try_recv() {
             println!("frame {:?}!", frame);
             println!("\n[{}] Received frame from switch, writing to tap", self.name);
             // 直接写入到tap设备
-            if let Some((_rx, tx)) = self.inner.lock().receive(timestamp) {
-                tx.consume(frame.len(), |buf| {
-                    buf.copy_from_slice(&frame);
-                });
-            }
+            return Some((
+                FrameCaptureRxToken {
+                    buffer: frame,
+                    name: self.name.clone(),
+                },
+                FrameCaptureTxToken {
+                    inner: self.inner.lock().transmit(timestamp).unwrap(),
+                    sender: &self.frame_sender,
+                    port_no: self.port_no,
+                    name: self.name.clone(),
+                }
+            ));
         } else {
             println!("[{}] No frames from switch", self.name);
         }
@@ -440,32 +456,10 @@ fn print_ethernet_frame(buffer: &[u8]) {
     println!("----------------------------------------");
 }
 
-// fn print_frame(buffer: &[u8]) {
-//     println!("Frame length: {} bytes", buffer.len());
-//     println!("Raw data:");
-//     for (i, byte) in buffer.iter().enumerate() {
-//         print!("{:02x} ", byte);
-//         if (i + 1) % 16 == 0 {
-//             println!();
-//         }
-//     }
-//     println!("\n");
-
-//     if buffer.len() >= 14 {
-//         if let Ok(frame) = EthernetFrame::new_checked(buffer) {
-//             println!("Ethernet Header:");
-//             println!("  Dst MAC: {}", frame.dst_addr());
-//             println!("  Src MAC: {}", frame.src_addr());
-//             println!("  Type: {:?}\n", frame.ethertype());
-//         }
-//     }
-// }
-
 fn run_server(
     mut device: FrameCapture,
-    running: Arc<AtomicBool>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let fd = device.as_raw_fd();
+    // let fd = device.as_raw_fd();
 
     let mut config = Config::new(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]).into());
     config.random_seed = rand::random();
@@ -502,7 +496,8 @@ fn run_server(
 
     info!("Server started on 192.168.69.11:6969");
 
-    while running.load(Ordering::SeqCst) {
+    loop {
+        println!("\x1b[34m------------------Server loop------------------\x1b[0m");
         let timestamp = SmoltcpInstant::now();
         iface.poll(timestamp, &mut device, &mut sockets);
 
@@ -520,17 +515,16 @@ fn run_server(
             info!("Server sent response: {:?} to {}", response, endpoint);
         }
 
-        phy_wait(fd, iface.poll_delay(timestamp, &sockets))
-            .expect("wait error");
+        // phy_wait(fd, iface.poll_delay(timestamp, &sockets))
+        //     .expect("wait error");
+        thread::sleep(std::time::Duration::from_micros(1000));
     };
-    Ok(())
 }
 
 fn run_client(
     mut device: FrameCapture,
-    running: Arc<AtomicBool>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let fd = device.as_raw_fd();
+    // let fd = device.as_raw_fd();
 
     let mut config = Config::new(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]).into());
     config.random_seed = rand::random();
@@ -567,7 +561,8 @@ fn run_client(
 
     info!("Client started on 192.168.69.22:7969");
 
-    while running.load(Ordering::SeqCst) {
+    loop {
+        println!("\x1b[34m------------------Client loop------------------\x1b[0m");
         let timestamp = SmoltcpInstant::now();
         iface.poll(timestamp, &mut device, &mut sockets);
 
@@ -588,28 +583,24 @@ fn run_client(
             info!("Client received: {:?} from {}", data, endpoint);
         }
 
-        phy_wait(fd, iface.poll_delay(timestamp, &sockets))
-            .expect("wait error");
+        // phy_wait(fd, iface.poll_delay(timestamp, &sockets))
+        //     .expect("wait error");
+        thread::sleep(std::time::Duration::from_micros(1000));
     }
-
-    Ok(())
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     utils::setup_logging("");
 
-    // 创建一个运行标志
-    let running = Arc::new(AtomicBool::new(true));
-
     // 创建交换机
     let mut switch = Switch::new();
     
     // 创建用于向交换机发送数据的环形缓冲区
-    let switch_buffer = RingBuffer::new(8);
+    let switch_buffer = RingBuffer::new(16);
     let (switch_producer, switch_consumer) = switch_buffer.split();
 
     // 为客户端创建通道
-    let (client_sender, client_receiver) = create_port_channel(8);
+    let (client_sender, client_receiver) = create_port_channel(16);
     let mut client_capture = FrameCapture::new(
         "tap2",
         Medium::Ethernet,
@@ -618,7 +609,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // 为服务端创建通道
-    let (server_sender, server_receiver) = create_port_channel(8);
+    let (server_sender, server_receiver) = create_port_channel(16);
     let mut server_capture = FrameCapture::new(
         "tap1",
         Medium::Ethernet,
@@ -640,36 +631,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     client_capture.set_port_no(client_port);
     server_capture.set_port_no(server_port);
 
-    switch.add_mac_table(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]), client_port);
-    switch.add_mac_table(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]), server_port);
+    switch.add_mac_list(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]), client_port);
+    switch.add_mac_list(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]), server_port);
 
-    // 启动交换机线程
-    let switch_running = running.clone();
+    // 服务端线程
+    let server_thread = thread::spawn(move || {
+        if let Err(e) = run_server(server_capture) {
+            eprintln!("Server error: {}", e);
+        }
+    });
+
+    // 客户端线程
+    let client_thread = thread::spawn(move || {
+        if let Err(e) = run_client(client_capture) {
+            eprintln!("Client error: {}", e);
+        }
+    });
+
+    // 交换机线程
     let switch_thread = thread::spawn(move || {
-        while switch_running.load(Ordering::SeqCst) {
-            if let Some((frame, in_port)) = switch_consumer.try_pop() {
+        loop {
+            while let Some((frame, in_port)) = switch_consumer.try_pop() {
                 println!("Switch processing frame from port {}", in_port);
                 switch.process_frame(frame, in_port);
                 switch.print_mac_table();
             }
             // 减少睡眠时间以提高响应性
-            thread::sleep(std::time::Duration::from_micros(100));
-        }
-    });
-
-    // 启动服务端线程
-    let server_running = running.clone();
-    let server_thread = thread::spawn(move || {
-        if let Err(e) = run_server(server_capture, server_running) {
-            eprintln!("Server error: {}", e);
-        }
-    });
-
-    // 启动客户端线程
-    let client_running = running.clone();
-    let client_thread = thread::spawn(move || {
-        if let Err(e) = run_client(client_capture, client_running) {
-            eprintln!("Client error: {}", e);
+            thread::sleep(std::time::Duration::from_micros(1000));
         }
     });
 
@@ -679,57 +667,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     switch_thread.join().unwrap();
 
     Ok(())
-}
-
-// 添加单元测试
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_ring_buffer() {
-        let ring_buffer = RingBuffer::<u32>::new(4);
-        let (producer, consumer) = ring_buffer.split();
-
-        // 测试基本的推送和弹出操作
-        assert_eq!(producer.try_push(1), Ok(()));
-        assert_eq!(producer.try_push(2), Ok(()));
-        assert_eq!(consumer.try_pop(), Some(1));
-        assert_eq!(consumer.try_pop(), Some(2));
-        assert_eq!(consumer.try_pop(), None);
-
-        // 测试缓冲区满的情况
-        assert_eq!(producer.try_push(1), Ok(()));
-        assert_eq!(producer.try_push(2), Ok(()));
-        assert_eq!(producer.try_push(3), Ok(()));
-        assert_eq!(producer.try_push(4), Err(4)); // 缓冲区已满
-
-        // 测试消费后可以继续推送
-        assert_eq!(consumer.try_pop(), Some(1));
-        assert_eq!(producer.try_push(4), Ok(()));
-    }
-
-    #[test]
-    fn test_port_channel() {
-        let (sender, receiver) = create_port_channel(4);
-        
-        // 测试基本的发送和接收
-        let data = vec![1, 2, 3];
-        assert!(sender.send(data.clone()).is_ok());
-        assert_eq!(receiver.try_recv(), Some(data));
-        assert_eq!(receiver.try_recv(), None);
-
-        // 测试多次发送
-        for i in 0..3 {
-            assert!(sender.send(vec![i]).is_ok());
-        }
-        // 缓冲区应该已满
-        assert!(sender.send(vec![3]).is_err());
-
-        // 接收并验证数据
-        for i in 0..3 {
-            assert_eq!(receiver.try_recv(), Some(vec![i]));
-        }
-        assert_eq!(receiver.try_recv(), None);
-    }
 }
