@@ -1,381 +1,260 @@
-use alloc::vec;
+use std::{cell::UnsafeCell, collections::HashMap, ptr, sync::{atomic::{AtomicUsize, Ordering}, Arc}};
+
 use log::debug;
+use smoltcp::wire::{EthernetAddress, EthernetFrame};
 use spin::Mutex;
-use crate::frame::{CapturedFrame, FrameCapture};
-use alloc::{collections::BTreeMap, sync::Arc, vec::Vec};
-use smoltcp::{
-    time::Instant, wire::EthernetAddress,
-    iface::{Interface, SocketHandle, SocketSet}, 
-    phy::{wait as phy_wait, Device, DeviceCapabilities, RxToken, TxToken}
-};
 
-pub type BridgeifPortmask = u8;
-pub const MAX_FRAME_SIZE: usize = 1522; // 略大于标准以太网帧的最大大小
-pub const MAX_FDB_ENTRIES: usize = 10;
-pub const BR_FLOOD: BridgeifPortmask = !0;
+use crate::frame::print_ethernet_frame;
 
-pub struct SwitchPort {
-    pub port_iface: Interface,                      // 端口对应的接口
-    pub port_device: Arc<Mutex<FrameCapture>>,      // 端口对应的设备
-    pub port_num: u8,                               // 端口号
+// 无锁环形缓冲区实现
+#[derive(Debug)]
+pub struct RingBuffer<T> {
+    buffer: Box<[UnsafeCell<T>]>,
+    head: AtomicUsize,
+    tail: AtomicUsize,
+    capacity: usize,
 }
 
-impl SwitchPort {
-    // 创建一个新的 SwitchPort
-    pub fn new(port_iface: Interface, device: FrameCapture, port_num: u8) -> Self {
-        let port_device = Arc::new(Mutex::new(device));
-        SwitchPort {
-            port_iface,
-            port_device,
-            port_num,
-        }
-    }
+unsafe impl<T: Send> Send for RingBuffer<T> {}
+unsafe impl<T: Send> Sync for RingBuffer<T> {}
 
-    // 接收数据帧
-    pub fn receive_frame(&mut self, timestamp: Instant) -> Option<Vec<u8>> {
-        let mut device = self.port_device.lock();
+#[derive(Clone, Debug)]
+pub struct Producer<T> {
+    buffer: Arc<RingBuffer<T>>,
+}
+
+#[derive(Clone, Debug)]
+pub struct Consumer<T> {
+    buffer: Arc<RingBuffer<T>>,
+}
+
+//
+impl<T> RingBuffer<T> {
+    pub fn new(capacity: usize) -> Self {
+        let mut buffer = Vec::with_capacity(capacity);
+        unsafe {
+            buffer.set_len(capacity);
+        }
         
-        println!("Trying to receive on port...");
-
-        // 使用 TunTapInterface 的 receive 方法
-        if let Some((rx_token, _tx_token)) = device.receive(timestamp) {
-            // 使用 RxToken 来获取数据
-            println!("Received data!");
-            let frame_data = rx_token.consume(|buffer| {
-                let mut data = Vec::new();
-                data.extend_from_slice(buffer);
-                data
-            });
-            Some(frame_data)
-        } else {
-            None
+        RingBuffer {
+            buffer: buffer.into_boxed_slice(),
+            head: AtomicUsize::new(0),
+            tail: AtomicUsize::new(0),
+            capacity,
         }
     }
 
-    // 发送数据帧
-    pub fn transmit_frame(&mut self, timestamp: Instant, frame: &[u8]) {
-        let mut device = self.port_device.lock();
-        if let Some(tx_token) = device.transmit(timestamp) {
-            tx_token.consume(frame.len(), |buffer| {
-                buffer.copy_from_slice(frame);
-            });
-        }
-    }
-
-    pub fn get_frames(&self) -> Vec<CapturedFrame> {
-        let device = self.port_device.lock();
-        device.get_frames()
-    }
-
-    pub fn capabilities(&self) -> DeviceCapabilities {
-        self.port_device.lock()
-            .capabilities()
-    }
-
-    pub fn get_port_num(&self) -> Option<u8> {
-        Some(self.port_num)
-    }
-
-    pub fn with_device<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce(&FrameCapture) -> R
-    {
-        let device = self.port_device.lock();
-        f(&device)
-    }
-
-    pub fn with_device_mut<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce(&mut FrameCapture) -> R
-    {
-        let mut device = self.port_device.lock();
-        f(&mut device)
-    }
-
-    pub fn get_port_device(&mut self) -> Arc<Mutex<FrameCapture>> {
-        self.port_device.clone()
+    pub fn split(self) -> (Producer<T>, Consumer<T>) {
+        let buffer = Arc::new(self);
+        (
+            Producer {
+                buffer: buffer.clone(),
+            },
+            Consumer {
+                buffer,
+            }
+        )
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct SwicthFdbEntry {
-    pub used: bool,                 // 表示该项是否已使用
-    pub dst_ports: usize,           // 目标端口的位掩码
-}
-
-#[derive(Debug, Clone)]
-pub struct SwicthFdb {
-    pub max_fdb_entries: u16,       // 最大表项数
-    pub fdb: Arc<Mutex<BTreeMap<EthernetAddress, SwicthFdbEntry>>>,   // 指向表项数组的指针
-}
-
-impl SwicthFdb {
-    pub fn new(max_entries: u16) -> Self {
-        SwicthFdb {
-            max_fdb_entries: max_entries,
-            fdb: Arc::new(Mutex::new(BTreeMap::new())),
+impl<T> Producer<T> {
+    pub fn try_push(&self, value: T) -> Result<(), T> {
+        let buffer = &self.buffer;
+        let tail = buffer.tail.load(Ordering::Relaxed);
+        let next_tail = (tail + 1) % buffer.capacity;
+        let head = buffer.head.load(Ordering::Acquire);
+        
+        println!("RingBuffer try_push: head={}, tail={}, next_tail={}, capacity={}", 
+            head, tail, next_tail, buffer.capacity);
+        
+        // 如果是Vec<u8>类型,打印帧内容
+        if let Some(frame_data) = unsafe { (&value as *const T).cast::<Vec<u8>>().as_ref() } {
+            println!("\nPushing frame data:");
+            print_ethernet_frame(frame_data);
         }
-    }
-
-    pub fn add_entry(&self, addr: EthernetAddress, ports: usize) -> Result<(), &'static str> {
-        let mut fdb = self.fdb.lock();
-
-        if fdb.len() >= self.max_fdb_entries as usize {
-            return Err("FDB is full");
+        
+        if next_tail == head {
+            println!("RingBuffer is full!");
+            return Err(value);
         }
 
-        fdb.insert(addr, SwicthFdbEntry {
-            used: true,
-            dst_ports: ports,
-        });
-
-        Ok(())
-    }
-
-    pub fn remove_entry(&self, addr: &EthernetAddress) -> Result<(), &'static str> {
-        let mut fdb = self.fdb.lock();
-
-        if fdb.remove(addr).is_none() {
-            return Err("Entry not found");
+        unsafe {
+            (*buffer.buffer[tail].get()) = value;
         }
+        
+        buffer.tail.store(next_tail, Ordering::Release);
+        println!("RingBuffer push success: new tail={}", next_tail);
 
-        Ok(())
-    }
-
-    pub fn get_entry(&self, addr: &EthernetAddress) -> Option<SwicthFdbEntry> {
-        let fdb = self.fdb.lock();
-        debug!("sfdb {:?}", fdb);
-        fdb.get(addr).cloned()
-    }
-
-    pub fn update_entry(&self, addr: EthernetAddress, new_ports: usize) -> Result<(), &'static str> {
-        let mut fdb = self.fdb.lock();
-
-        if let Some(entry) = fdb.get_mut(&addr) {
-            entry.dst_ports = new_ports;
-            Ok(())
-        } else {
-            Err("Entry not found")
-        }
-    }
-
-    pub fn clear(&self) {
-        let mut fdb = self.fdb.lock();
-        fdb.clear();
-    }
-
-    pub fn is_full(&self) -> bool {
-        let fdb = self.fdb.lock();
-        fdb.len() >= self.max_fdb_entries as usize
-    }
-
-    pub fn fdb_add(&self, addr: &EthernetAddress, ports: usize) -> Result<(), &'static str> {
-        let mut fdb = self.fdb.lock();
-
-        if fdb.len() >= self.max_fdb_entries as usize {
-            // 如果 FDB 已满，尝试找到一个未使用的条目并替换它
-            if let Some(unused_key) = fdb.iter().find(|(_, v)| !v.used).map(|(k, _)| *k) {
-                fdb.remove(&unused_key);
+        // 如果是 Vec<u8> 类型,打印帧内容
+        for i in 0..buffer.tail.load(Ordering::Relaxed) {
+            if let Some(frame_data) = unsafe { buffer.buffer[i].get().cast::<Vec<u8>>().as_ref() } {
+                debug!("Pushed frame data:");
+                debug!("frame_data: {:?}", frame_data);
+                // print_ethernet_frame(frame_data);
             } else {
-                return Err("FDB is full");
+                debug!("Pushed data: {:?}", unsafe { buffer.buffer[i].get() });
             }
         }
 
-        fdb.insert(*addr, SwicthFdbEntry {
-            used: true,
-            dst_ports: ports,
-        });
-
         Ok(())
     }
+}
 
-    pub fn fdb_remove(&self, addr: &EthernetAddress) -> Result<(), &'static str> {
-        let mut fdb = self.fdb.lock();
+impl<T> Consumer<T> {
+    pub fn try_pop(&self) -> Option<T> {
+        let buffer = &self.buffer;
+        let head = buffer.head.load(Ordering::Relaxed);
+        let tail = buffer.tail.load(Ordering::Acquire);
+        
+        debug!("\x1b[35mtest test test\x1b[0m");
+        println!("RingBuffer try_pop: head={}, tail={}, capacity={}", 
+            head, tail, buffer.capacity);
 
-        if let Some(unused_key) = fdb.iter().find(|(k, v)| !v.used && *k == addr).map(|(k, _)| *k) {
-            fdb.remove(&unused_key);
-        } else {
-            return Err("FDB is full");
+        if head == tail {
+            // println!("RingBuffer is empty!");
+            return None;
         }
 
-        Ok(())
-    }
+        let value = unsafe {
+            ptr::read(buffer.buffer[head].get())
+        };
+        
+        // 如果是Vec<u8>类型，打印帧内容
+        if let Some(frame_data) = unsafe { (&value as *const T).cast::<Vec<u8>>().as_ref() } {
+            println!("\nPopped frame data:");
+            print_ethernet_frame(frame_data);
+        }
 
-    pub fn get(&self, addr: &EthernetAddress) -> Option<SwicthFdbEntry> {
-        let fdb = self.fdb.lock();
-        fdb.get(addr).cloned()
+        let next_head = (head + 1) % buffer.capacity;
+        buffer.head.store(next_head, Ordering::Release);
+        println!("RingBuffer pop success: new head={}", next_head);
+        
+        Some(value)
     }
+}
+
+// 端口发送者和接收者
+pub struct PortSender {
+    producer: Producer<Vec<u8>>,
+}
+
+impl PortSender {
+    pub fn send(&self, data: Vec<u8>) -> Result<(), Vec<u8>> {
+        let result = self.producer.try_push(data);
+        result
+    }
+}
+
+pub struct PortReceiver {
+    consumer: Consumer<Vec<u8>>,
+}
+
+impl PortReceiver {
+    pub fn try_recv(&self) -> Option<Vec<u8>> {
+        let result = self.consumer.try_pop();
+        println!("PortReceiver try_recv: {:?}", result);
+        result
+    }
+}
+
+// 创建端口通道
+pub fn create_port_channel(capacity: usize) -> (PortSender, PortReceiver) {
+    let ring_buffer = RingBuffer::new(capacity);
+    let (producer, consumer) = ring_buffer.split();
+    (
+        PortSender { producer },
+        PortReceiver { consumer }
+    )
+}
+
+// 交换机相关结构
+struct SwitchPort {
+    #[allow(dead_code)]
+    mac_addr: EthernetAddress,
+    sender: PortSender,
 }
 
 pub struct Switch {
-    pub ethaddr: EthernetAddress,               // 网桥的 MAC 地址
-    pub max_ports: u8,                          // 端口的最大数量
-    pub num_ports: u8,                          // 端口的当前数量
-    pub ports: BTreeMap<u8, SwitchPort>,        // 端口列表
-    pub fdb: SwicthFdb,
+    mac_table: Arc<Mutex<HashMap<EthernetAddress, usize>>>,
+    ports: Vec<SwitchPort>,
 }
 
-unsafe impl Send for Switch {}
-unsafe impl Sync for Switch {}
-
 impl Switch {
-    pub fn new(ethaddr: EthernetAddress, max_ports: u8) -> Self {
+    pub fn new() -> Self {
         Switch {
-            ethaddr,
-            max_ports,
-            num_ports: 0,
-            ports: BTreeMap::new(),
-            fdb: SwicthFdb::new(MAX_FDB_ENTRIES as u16),
+            mac_table: Arc::new(Mutex::new(HashMap::new())),
+            ports: Vec::new(),
         }
     }
 
-    pub fn process_frames(&mut self) {
-        let now = Instant::now();
+    pub fn add_mac_list(&mut self, mac_addr: EthernetAddress, port_no: usize) {
+        self.mac_table.lock().insert(mac_addr, port_no);
+    }
+
+    pub fn add_port(&mut self, mac_addr: EthernetAddress, sender: PortSender) -> usize {
+        let port_no = self.ports.len();
+        self.ports.push(SwitchPort { mac_addr, sender });
+        port_no
+    }
+
+    pub fn process_frame(&mut self, frame: Vec<u8>, in_port: usize) {
+        println!("\nSwitch processing frame of size {} from port {}", frame.len(), in_port);
         
-        // 遍历所有端口接收数据
-        for (port_num, port) in self.ports.iter_mut() {
-            println!("Bridge: port_num {:?}", port_num);
-            if let Some(frame) = port.receive_frame(now) {
-                // 打印接收到的数据（使用绿色）
-                println!("\x1b[32mReceived frame on port {}: {:?}\x1b[0m", port_num, frame);
-
-                // 如果是 ARP 包（假设是以太网帧）
-                if frame.len() >= 14 && frame[12] == 0x08 && frame[13] == 0x06 {
-                    let dst_mac = EthernetAddress::from_bytes(&frame[0..6]);
-                    let src_mac = EthernetAddress::from_bytes(&frame[6..12]);
-                    
-                    println!("\x1b[33mARP frame details:\x1b[0m");
-                    println!("Dst MAC: {:?}", dst_mac);
-                    println!("Src MAC: {:?}", src_mac);
-                    
-                    // 更新转发数据库
-                    let mut fdb = self.fdb.fdb.lock();
-                    fdb.entry(src_mac).or_insert(SwicthFdbEntry {
-                        used: true,
-                        dst_ports: 1 << port_num
-                    });
-                }
-            }
-        }
-
-        println!("Bridge: process_frames over");
-    }
-
-    pub fn decide_forward_ports(&self, dst_addr: &EthernetAddress, in_port: u8) -> Vec<u8> {
-        if let Some(entry) = self.fdb.get_entry(dst_addr) {
-            debug!("Static FDB {}", entry.dst_ports);
-            return vec![entry.dst_ports as u8];
-        }
-
-        debug!("Broadcasting frame");
-        (0..self.num_ports).filter(|&p| p != in_port).collect()
-    }
-
-    pub fn fdb_add(&self, addr: &EthernetAddress, ports: usize) -> Result<(), &'static str> {
-        self.fdb.fdb_add(addr, ports)
-    }
-
-    pub fn fdb_remove(&self, addr: &EthernetAddress) -> Result<(), &'static str> {
-        self.fdb.fdb_remove(addr)
-    }
-
-    pub fn find_dst_ports(&self, dst_addr: &EthernetAddress) -> BridgeifPortmask {
-        let fdb = self.fdb.fdb.lock();
-        for (k, v) in fdb.iter() {
-            if v.used && k == dst_addr {
-                return v.dst_ports as u8;
-            }
-        }
-        if dst_addr.0[0] & 1 != 0 {
-            return BR_FLOOD;
-        }
-        0
-    }
-
-    pub fn remove_port(&mut self, port_num: u8) -> Option<SwitchPort> {
-        if self.ports.remove(&port_num).is_some() {
-            self.num_ports -= 1;
-        }
-        self.ports.remove(&port_num)
-    }
-
-    pub fn add_port(&mut self, port_iface: Interface, port_device: FrameCapture, port_num: u8) -> Result<(), &'static str> {
-        if self.num_ports >= self.max_ports {
-            return Err("Maximum number of ports reached");
-        }
-        let port = SwitchPort::new(port_iface, port_device, port_num);
-        self.ports.insert(port_num, port);
-        self.num_ports += 1;
-        Ok(())
-    }
-
-    pub fn get_switchport(&self, port: usize) -> Option<&SwitchPort> {
-        self.ports.get(&(port as u8))
-    }
-
-    pub fn poll<F>(
-        &mut self, 
-        timestamp: Instant, 
-        sockets: &mut SocketSet<'_>,
-        #[allow(unused_variables)]
-        socket_handle: SocketHandle,
-        num: u8,
-        mut f: F
-    )
-    where
-        F: FnMut(&mut SocketSet<'_>)
-    {
-        // 第一步：收集数据
-        let mut frames_to_forward = Vec::new();
-
-        if let Some(port) = self.ports.get_mut(&num) {
-            let fd = port.port_device.lock().as_raw_fd();
-            let port_iface: &mut Interface = &mut port.port_iface;
-            let mut device = port.port_device.lock();
-            port_iface.poll(timestamp, &mut *device, sockets);
-            drop(device);
-
-            // 获取并保存需要转发的帧
-            frames_to_forward = port.get_frames();
-
-            for i in 0..frames_to_forward.len() {
-                debug!("Frame to forward: {i}, {:?}", frames_to_forward[i]);
-            }
-
-            f(sockets);
+        if let Ok(frame) = EthernetFrame::new_checked(&frame) {
+            let src_mac = frame.src_addr();
+            let dst_mac = frame.dst_addr();
             
-            let port_iface: &mut Interface = &mut port.port_iface;
-            phy_wait(fd, port_iface.poll_delay(timestamp, &sockets)).expect("wait error");
-        }
-    
-        if !frames_to_forward.is_empty() {
-            println!("Got {} frames to forward", frames_to_forward.len());
-            for (port_num, port) in self.ports.iter_mut() {
-                println!("Bridge: port_num {:?}", port_num);
-                if port_num != &num {
-                    let mut device = port.port_device.lock();
-
-                    for frame in &frames_to_forward {
-                        println!("{:?}", frame);
-                        // 使用 receive 获取接收 token
-                        if let Some((rx, _tx)) = device.receive(timestamp) {
-                            rx.consume(|buffer| {
-                                buffer.copy_from_slice(&frame.data);
-                            });
+            println!("\nSwitch: received frame on port {}", in_port);
+            println!("Source MAC: {}", src_mac);
+            println!("Destination MAC: {}", dst_mac);
+            
+            // 更新MAC地址表
+            self.mac_table.lock().insert(src_mac, in_port);
+            
+            let frame_data = frame.into_inner().to_vec();
+            
+            // 转发决策
+            if dst_mac == EthernetAddress::BROADCAST {
+                println!("Switch: broadcasting frame");
+                for (port_no, port) in self.ports.iter().enumerate() {
+                    if port_no != in_port {
+                        println!("Switch: sending to port {}", port_no);
+                        if let Err(e) = port.sender.send(frame_data.clone()) {
+                            println!("Switch: failed to send to port {}: {:?}", port_no, e);
                         }
                     }
-                    
-                    drop(device);
+                }
+            } else {
+                // 查找目标端口
+                if let Some(&out_port) = self.mac_table.lock().get(&dst_mac) {
+                    if out_port != in_port {
+                        println!("Switch: forwarding to port {}", out_port);
+                        if let Err(e) = self.ports[out_port].sender.send(frame_data) {
+                            println!("Switch: failed to forward to port {}: {:?}", out_port, e);
+                        }
+                    }
+                } else {
+                    println!("Switch: flooding frame (unknown destination)");
+                    for (port_no, port) in self.ports.iter().enumerate() {
+                        if port_no != in_port {
+                            if let Err(e) = port.sender.send(frame_data.clone()) {
+                                println!("Switch: failed to flood to port {}: {:?}", port_no, e);
+                            }
+                        }
+                    }
                 }
             }
-        
-            // 清空已转发的帧
-            println!("Clearing frames");
-            for (_port_num, port) in self.ports.iter_mut() {
-                port.with_device_mut(|device| {
-                    device.clear_frames();
-                });
-            }
+        } else {
+            println!("Invalid ethernet frame received!");
         }
+    }
+
+    pub fn print_mac_table(&self) {
+        let table = self.mac_table.lock();
+        println!("\n=== MAC Address Table ===");
+        for (mac, port) in table.iter() {
+            println!("MAC: {}, Port: {}", mac, port);
+        }
+        println!("========================\n");
     }
 }

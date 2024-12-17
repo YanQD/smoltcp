@@ -1,212 +1,244 @@
-extern crate alloc;
+mod utils;
+mod switch;
+mod frame;
 
-pub mod utils;
-pub mod switch;
-pub mod frame;
-
-use spin::Mutex;
-use switch::Switch;
 use frame::FrameCapture;
+use log::{debug, info};
+use switch::{create_port_channel, RingBuffer, Switch};
 
 use std::thread;
-use std::sync::Arc;
+use std::time::{Duration, Instant};
 
-use smoltcp::socket::udp;
-use smoltcp::time::Instant;
 use smoltcp::iface::{Config, Interface, SocketSet};
-use smoltcp::phy::Medium;
-use smoltcp::wire::{EthernetAddress, HardwareAddress, IpAddress, IpCidr, Ipv4Address, Ipv6Address};
+use smoltcp::phy::{wait as phy_wait, Medium};
+use smoltcp::socket::udp;
+use smoltcp::time::Instant as SmoltcpInstant;
+use smoltcp::wire::{EthernetAddress, IpAddress, IpCidr, Ipv4Address, Ipv6Address};
 
-pub const BRIDGE_MAC: [u8; 6] = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
-// phy::TunTapInterface: tap0
-pub const PORT1_MAC: [u8; 6] = [0x02, 0x00, 0x00, 0x00, 0x00, 0x02];
-// phy::TunTapInterface: tap1
-pub const PORT2_MAC: [u8; 6] = [0x02, 0x00, 0x00, 0x00, 0x00, 0x03];
-// phy::TunTapInterface: tap2
-pub const PORT3_MAC: [u8; 6] = [0x02, 0x00, 0x00, 0x00, 0x00, 0x04];
-// Bridge Max Ports
-pub const MAX_PORTS: u8 = 8;
+fn run_server(
+    mut device: FrameCapture,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // let fd = device.as_raw_fd();
 
-pub fn get_bridge_mac() -> EthernetAddress {
-    EthernetAddress::from_bytes(&BRIDGE_MAC)
-}
+    let mut config = Config::new(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]).into());
+    config.random_seed = rand::random();
 
-pub fn get_port1_mac() -> EthernetAddress {
-    EthernetAddress::from_bytes(&PORT1_MAC)
-}
-
-pub fn get_port2_mac() -> EthernetAddress {
-    EthernetAddress::from_bytes(&PORT2_MAC)
-}
-
-pub fn get_port3_mac() -> EthernetAddress {
-    EthernetAddress::from_bytes(&PORT3_MAC)
-}
-
-fn main() {
-    utils::setup_logging("");
-
-    // 创建两个TAP设备作为测试端口
-    // let device0 = FrameCapture::new("tap2", Medium::Ethernet).unwrap();
-    let mut device1 = FrameCapture::new("tap0", Medium::Ethernet).unwrap();
-    let mut device2 = FrameCapture::new("tap1", Medium::Ethernet).unwrap();
-
-    // let config0 = Config::new(HardwareAddress::Ethernet(get_port1_mac()));
-    let config1 = Config::new(HardwareAddress::Ethernet(get_port2_mac()));
-    let config2 = Config::new(HardwareAddress::Ethernet(get_port3_mac()));
-
-    let mut iface1 = Interface::new(config1, &mut device1, Instant::now());
-    iface1.update_ip_addrs(|ip_addrs| {
+    let mut iface = Interface::new(config, &mut device, SmoltcpInstant::now());
+    iface.update_ip_addrs(|ip_addrs| {
         ip_addrs
-            .push(IpCidr::new(IpAddress::v4(192, 168, 69, 6), 24))
+            .push(IpCidr::new(IpAddress::v4(192, 168, 69, 11), 24))
             .unwrap();
         ip_addrs
-            .push(IpCidr::new(IpAddress::v6(0xfdaa, 0, 0, 0, 0, 0, 0, 1), 64))
+            .push(IpCidr::new(IpAddress::v6(0xfdaa, 0, 0, 0, 0, 0, 0, 0x11), 64))
             .unwrap();
     });
-    iface1
-        .routes_mut()
-        .add_default_ipv4_route(Ipv4Address::new(192, 168, 69, 100))
+
+    iface.routes_mut()
+        .add_default_ipv4_route(Ipv4Address::new(192, 168, 69, 22))
         .unwrap();
-    iface1
-        .routes_mut()
-        .add_default_ipv6_route(Ipv6Address::new(0xfe80, 0, 0, 0, 0, 0, 0, 0x100))
+    iface.routes_mut()
+        .add_default_ipv6_route(Ipv6Address::new(0xfe80, 0, 0, 0, 0, 0, 0, 0x22))
         .unwrap();
 
-    let mut iface2 = Interface::new(config2, &mut device2, Instant::now());
-    iface2.update_ip_addrs(|ip_addrs| {
+    let udp_rx_buffer = udp::PacketBuffer::new(
+        vec![udp::PacketMetadata::EMPTY; 16],
+        vec![0; 65535],
+    );
+    let udp_tx_buffer = udp::PacketBuffer::new(
+        vec![udp::PacketMetadata::EMPTY; 16],
+        vec![0; 65535],
+    );
+    let udp_socket = udp::Socket::new(udp_rx_buffer, udp_tx_buffer);
+
+    let mut sockets = SocketSet::new(vec![]);
+    let udp_handle = sockets.add(udp_socket);
+
+    info!("Server started on 192.168.69.11:6969");
+
+    loop {
+        debug!("\x1b[34m------------------Server loop------------------\x1b[0m");
+        let timestamp = SmoltcpInstant::now();
+
+        // // 处理从交换机来的数据
+        // device.process_switch_data(timestamp);
+
+        iface.poll(timestamp, &mut device, &mut sockets);
+
+        let socket = sockets.get_mut::<udp::Socket>(udp_handle);
+        if !socket.is_open() {
+            socket.bind(6969).unwrap();
+            info!("Server socket bound to port 6969");
+        }
+
+        if let Ok((data, endpoint)) = socket.recv() {
+            info!("Server received: {:?} from {}", data, endpoint);
+            let mut response = data.to_vec();
+            response.reverse();
+            socket.send_slice(&response, endpoint).unwrap();
+            info!("Server sent response: {:?} to {}", response, endpoint);
+        }
+
+        // phy_wait(fd, iface.poll_delay(timestamp, &sockets))
+        //     .expect("wait error");
+    };
+}
+
+fn run_client(
+    mut device: FrameCapture,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // let fd = device.as_raw_fd();
+
+    let mut config = Config::new(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]).into());
+    config.random_seed = rand::random();
+
+    let mut iface = Interface::new(config, &mut device, SmoltcpInstant::now());
+    iface.update_ip_addrs(|ip_addrs| {
         ip_addrs
-            .push(IpCidr::new(IpAddress::v4(192, 168, 69, 7), 24))
+            .push(IpCidr::new(IpAddress::v4(192, 168, 69, 22), 24))
             .unwrap();
         ip_addrs
-            .push(IpCidr::new(IpAddress::v6(0xfdaa, 0, 0, 0, 0, 0, 0, 2), 64))
+            .push(IpCidr::new(IpAddress::v6(0xfdaa, 0, 0, 0, 0, 0, 0, 0x22), 64))
             .unwrap();
     });
-    iface2
-        .routes_mut()
-        .add_default_ipv4_route(Ipv4Address::new(192, 168, 69, 100))
+
+    iface.routes_mut()
+        .add_default_ipv4_route(Ipv4Address::new(192, 168, 69, 11))
         .unwrap();
-    iface2
-        .routes_mut()
-        .add_default_ipv6_route(Ipv6Address::new(0xfe80, 0, 0, 0, 0, 0, 0, 0x101))
+    iface.routes_mut()
+        .add_default_ipv6_route(Ipv6Address::new(0xfe80, 0, 0, 0, 0, 0, 0, 0x11))
         .unwrap();
 
-    // 创建网桥实例
-    let switch = Arc::new(Mutex::new(Switch::new(
-        EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x04]),
-        2,  // max_ports
-    )));
+    let udp_rx_buffer = udp::PacketBuffer::new(
+        vec![udp::PacketMetadata::EMPTY; 16],
+        vec![0; 65535],
+    );
+    let udp_tx_buffer = udp::PacketBuffer::new(
+        vec![udp::PacketMetadata::EMPTY; 16],
+        vec![0; 65535],
+    );
+    let udp_socket = udp::Socket::new(udp_rx_buffer, udp_tx_buffer);
 
-    // 添加端口到网桥
-    switch.lock().add_port(
-        iface1,
-        device1,
-        0, 
-    ).unwrap();
+    let mut sockets = SocketSet::new(vec![]);
+    let udp_handle = sockets.add(udp_socket);
 
-    switch.lock().add_port(
-        iface2,
-        device2,
-        1,
-    ).unwrap();
+    info!("Client started on 192.168.69.22:7969");
 
-    let mut sockets1 = SocketSet::new(vec![]);
-    let mut sockets2 = SocketSet::new(vec![]);
+    let mut last_send = Instant::now();
+    let send_interval = Duration::from_secs(1); // 每秒发送一次
 
-    let udp_rx_buffer1 = udp::PacketBuffer::new(vec![udp::PacketMetadata::EMPTY; 64], vec![0; 65535]);
-    let udp_tx_buffer1 = udp::PacketBuffer::new(vec![udp::PacketMetadata::EMPTY; 64], vec![0; 65535]);
-    let udp_rx_buffer2 = udp::PacketBuffer::new(vec![udp::PacketMetadata::EMPTY; 64], vec![0; 65535]);
-    let udp_tx_buffer2 = udp::PacketBuffer::new(vec![udp::PacketMetadata::EMPTY; 64], vec![0; 65535]);
-    let udp_socket1 = udp::Socket::new(udp_rx_buffer1, udp_tx_buffer1);
-    let udp_socket2 = udp::Socket::new(udp_rx_buffer2, udp_tx_buffer2);
+    loop {
+        debug!("\x1b[34m------------------Client loop------------------\x1b[0m");
+        let timestamp = SmoltcpInstant::now();
 
-    let udp_handle1 = sockets1.add(udp_socket1);
-    let udp_handle2 = sockets2.add(udp_socket2);
+        // let mut last_send = Instant::now();
+        // let send_interval = Duration::from_secs(1); // 每秒发送一次
 
-    // 创建客户端线程
-    let bridge_clone1 = switch.clone();
+        iface.poll(timestamp, &mut device, &mut sockets);
+
+        let socket = sockets.get_mut::<udp::Socket>(udp_handle);
+        if !socket.is_open() {
+            socket.bind(7969).unwrap();
+            info!("Client socket bound to port 7969");
+        }
+
+        let now = Instant::now();
+        if now.duration_since(last_send) >= send_interval {
+            let server_endpoint = (IpAddress::v4(192, 168, 69, 11), 6969);
+            let data = b"Hello from sender!";
+            match socket.send_slice(data, server_endpoint) {
+                Ok(_) => {
+                    info!("Client sent: {:?} to {:?}", data, server_endpoint);
+                    last_send = now; // 更新最后发送时间
+                },
+                Err(e) => println!("Failed to send datas: {}", e),
+            }            
+        }
+
+        if let Ok((data, endpoint)) = socket.recv() {
+            info!("Client received: {:?} from {}", data, endpoint);
+        }
+
+        // phy_wait(fd, iface.poll_delay(timestamp, &sockets))
+        //     .expect("wait error");
+    }
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // utils::setup_logging("");
+
+    // 创建交换机
+    let mut switch = Switch::new();
+    
+    // 创建用于向交换机发送数据的环形缓冲区
+    let switch_buffer = RingBuffer::new(16);
+    let (switch_producer, switch_consumer) = switch_buffer.split();
+
+    // 为客户端创建通道
+    let (client_sender, client_receiver) = create_port_channel(16);
+    let mut client_capture = FrameCapture::new(
+        "tap2",
+        Medium::Ethernet,
+        switch_producer.clone(),
+        client_receiver,
+    )?;
+
+    // 为服务端创建通道
+    let (server_sender, server_receiver) = create_port_channel(16);
+    let mut server_capture = FrameCapture::new(
+        "tap1",
+        Medium::Ethernet,
+        switch_producer.clone(),
+        server_receiver,
+    )?;
+
+    // 添加端口到交换机
+    let client_port = switch.add_port(
+        EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]),
+        client_sender,
+    );
+    let server_port = switch.add_port(
+        EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]),
+        server_sender,
+    );
+
+    // 设置端口号
+    client_capture.set_port_no(client_port);
+    server_capture.set_port_no(server_port);
+
+    switch.add_mac_list(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]), client_port);
+    switch.add_mac_list(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]), server_port);
+
+    // 服务端线程
     let server_thread = thread::spawn(move || {
-        println!("\x1b[31mThis is in Sender\x1b[0m");
-
-        // 处理发送
-        loop {
-            println!("\x1b[35mClient loop\x1b[0m");
-            let timestamp1 = Instant::now();
-
-            // bridge poll
-            println!("\x1b[35mClient Second: Bridge poll\x1b[0m");
-            let mut bridge_guard = bridge_clone1.lock();
-            bridge_guard.poll(
-                timestamp1, 
-                &mut sockets1,
-                udp_handle1,
-                0,
-                |sockets1| {
-                    let socket1 = sockets1.get_mut::<udp::Socket>(udp_handle1);
-                    if !socket1.is_open() {
-                        socket1.bind(7969).unwrap();
-                        println!("\x1b[34mSender socket bound to port 7969\x1b[0m");
-                    }
-        
-                    let data: &[u8; 18] = b"Hello from sender!";
-                    println!("\x1b[35mClient First: Sending data {:?}\x1b[0m", data);
-                    match socket1.send_slice(data, (IpAddress::v4(192, 168, 69, 7), 7979)) {
-                        Ok(_) => println!("\x1b[35mClient First: Sent data {:?} to {}:{}\x1b[0m", data, IpAddress::v4(192, 168, 69, 7), 7979),
-                        Err(e) => println!("Failed to send data: {}", e),
-                    }
-                }
-            );
-            drop(bridge_guard);
+        if let Err(e) = run_server(server_capture) {
+            eprintln!("Server error: {}", e);
         }
     });
 
-    // // 创建服务端线程
-    let bridge_clone2 = switch.clone();
+    // 客户端线程
     let client_thread = thread::spawn(move || {
-        println!("\x1b[31mThis is in Receiver\x1b[0m");
-        
-        // 处理接收以及发送
-        loop {
-            println!("\x1b[35mServer loop\x1b[0m");
-            let timestamp2 = Instant::now();
-
-            // bridge poll
-            println!("\x1b[35mServer Second: Bridge poll\x1b[0m");
-            let mut bridge_guard = bridge_clone2.lock();
-            bridge_guard.poll(
-                timestamp2,
-                &mut sockets2,
-                udp_handle2,
-                1, 
-                |sockets| {
-                    let socket = sockets.get_mut::<udp::Socket>(udp_handle2);
-                    if !socket.is_open() {
-                        socket.bind(7979).unwrap();
-                        println!("\x1b[35mReceiver socket bound to port 7979\x1b[0m");
-                    }
-
-                    println!("test test test");
-            
-                    let server = match socket.recv() {
-                        Ok((data, endpoint)) => {
-                            println!("udp: recv data: {:?} from {}", data, endpoint);
-                            let mut data = data.to_vec();
-                            data.reverse();
-                            Some((endpoint, data))
-                        }
-                        Err(_) => None,
-                    };
-            
-                    if let Some((endpoint, data)) = server {
-                        println!("udp: send data: {:?} to {}", data, endpoint);
-                        socket.send_slice(&data, endpoint).unwrap();
-                    }
-                }
-            );
-            drop(bridge_guard);
+        if let Err(e) = run_client(client_capture) {
+            eprintln!("Client error: {}", e);
         }
     });
 
+    // 交换机线程
+    let switch_thread = thread::spawn(move || {
+        loop {
+            while let Some((frame, in_port)) = switch_consumer.try_pop() {
+                println!("Switch processing frame from port {}", in_port);
+                switch.process_frame(frame, in_port);
+                switch.print_mac_table();
+            }
+            // 减少睡眠时间以提高响应性
+            thread::sleep(std::time::Duration::from_micros(1000));
+        }
+    });
+
+    // 等待线程完成
     server_thread.join().unwrap();
     client_thread.join().unwrap();
+    switch_thread.join().unwrap();
+
+    Ok(())
 }

@@ -303,6 +303,34 @@ impl FrameCapture {
     fn as_raw_fd(&self) -> i32 {
         self.inner.lock().as_raw_fd()
     }
+
+    // 处理从交换机来的数据
+    fn process_switch_data(&mut self, timestamp: Instant) -> Option<(<FrameCapture as Device>::RxToken<'_>, <FrameCapture as Device>::TxToken<'_>)> {
+        println!("\n[{}] Checking for frames from switch", self.name);
+        
+        // 优先检查是否有来自交换机的数据
+        if let Some(frame) = self.frame_receiver.try_recv() {
+            println!("frame {:?}!", frame);
+            println!("\n[{}] Received frame from switch, writing to tap", self.name);
+            // 直接写入到tap设备
+            return Some((
+                FrameCaptureRxToken {
+                    buffer: frame,
+                    name: self.name.clone(),
+                },
+                FrameCaptureTxToken {
+                    inner: self.inner.lock().transmit(timestamp).unwrap(),
+                    sender: &self.frame_sender,
+                    port_no: self.port_no,
+                    name: self.name.clone(),
+                }
+            ));
+        } else {
+            println!("[{}] No frames from switch", self.name);
+        }
+
+        None
+    }
 }
 
 impl Device for FrameCapture {
@@ -459,7 +487,7 @@ fn print_ethernet_frame(buffer: &[u8]) {
 fn run_server(
     mut device: FrameCapture,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // let fd = device.as_raw_fd();
+    let fd = device.as_raw_fd();
 
     let mut config = Config::new(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]).into());
     config.random_seed = rand::random();
@@ -499,6 +527,10 @@ fn run_server(
     loop {
         println!("\x1b[34m------------------Server loop------------------\x1b[0m");
         let timestamp = SmoltcpInstant::now();
+
+        // // 处理从交换机来的数据
+        // device.process_switch_data(timestamp);
+
         iface.poll(timestamp, &mut device, &mut sockets);
 
         let socket = sockets.get_mut::<udp::Socket>(udp_handle);
@@ -515,16 +547,15 @@ fn run_server(
             info!("Server sent response: {:?} to {}", response, endpoint);
         }
 
-        // phy_wait(fd, iface.poll_delay(timestamp, &sockets))
-        //     .expect("wait error");
-        thread::sleep(std::time::Duration::from_micros(1000));
+        phy_wait(fd, iface.poll_delay(timestamp, &sockets))
+            .expect("wait error");
     };
 }
 
 fn run_client(
     mut device: FrameCapture,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // let fd = device.as_raw_fd();
+    let fd = device.as_raw_fd();
 
     let mut config = Config::new(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]).into());
     config.random_seed = rand::random();
@@ -564,6 +595,10 @@ fn run_client(
     loop {
         println!("\x1b[34m------------------Client loop------------------\x1b[0m");
         let timestamp = SmoltcpInstant::now();
+
+        // // 处理从交换机来的数据
+        // device.process_switch_data(timestamp);
+
         iface.poll(timestamp, &mut device, &mut sockets);
 
         let socket = sockets.get_mut::<udp::Socket>(udp_handle);
@@ -583,9 +618,8 @@ fn run_client(
             info!("Client received: {:?} from {}", data, endpoint);
         }
 
-        // phy_wait(fd, iface.poll_delay(timestamp, &sockets))
-        //     .expect("wait error");
-        thread::sleep(std::time::Duration::from_micros(1000));
+        phy_wait(fd, iface.poll_delay(timestamp, &sockets))
+            .expect("wait error");
     }
 }
 
