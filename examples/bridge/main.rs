@@ -1,16 +1,16 @@
 mod utils;
 mod switch;
 mod frame;
+mod bridge_device;
 
 use frame::FrameCapture;
-use log::{debug, info};
+use log::info;
 use switch::{create_port_channel, RingBuffer, Switch};
 
 use std::thread;
-use std::time::{Duration, Instant};
 
 use smoltcp::iface::{Config, Interface, SocketSet};
-use smoltcp::phy::{wait as phy_wait, Medium};
+use smoltcp::phy::Medium;
 use smoltcp::socket::udp;
 use smoltcp::time::Instant as SmoltcpInstant;
 use smoltcp::wire::{EthernetAddress, IpAddress, IpCidr, Ipv4Address, Ipv6Address};
@@ -18,8 +18,6 @@ use smoltcp::wire::{EthernetAddress, IpAddress, IpCidr, Ipv4Address, Ipv6Address
 fn run_server(
     mut device: FrameCapture,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // let fd = device.as_raw_fd();
-
     let mut config = Config::new(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]).into());
     config.random_seed = rand::random();
 
@@ -56,11 +54,8 @@ fn run_server(
     info!("Server started on 192.168.69.11:6969");
 
     loop {
-        debug!("\x1b[34m------------------Server loop------------------\x1b[0m");
+        println!("\x1b[34m------------------Server loop------------------\x1b[0m");
         let timestamp = SmoltcpInstant::now();
-
-        // // 处理从交换机来的数据
-        // device.process_switch_data(timestamp);
 
         iface.poll(timestamp, &mut device, &mut sockets);
 
@@ -78,16 +73,13 @@ fn run_server(
             info!("Server sent response: {:?} to {}", response, endpoint);
         }
 
-        // phy_wait(fd, iface.poll_delay(timestamp, &sockets))
-        //     .expect("wait error");
-    };
+        thread::sleep(std::time::Duration::from_millis(100));
+    }
 }
 
 fn run_client(
     mut device: FrameCapture,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // let fd = device.as_raw_fd();
-
     let mut config = Config::new(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]).into());
     config.random_seed = rand::random();
 
@@ -123,15 +115,9 @@ fn run_client(
 
     info!("Client started on 192.168.69.22:7969");
 
-    let mut last_send = Instant::now();
-    let send_interval = Duration::from_secs(1); // 每秒发送一次
-
     loop {
-        debug!("\x1b[34m------------------Client loop------------------\x1b[0m");
+        println!("\x1b[34m------------------Client loop------------------\x1b[0m");
         let timestamp = SmoltcpInstant::now();
-
-        // let mut last_send = Instant::now();
-        // let send_interval = Duration::from_secs(1); // 每秒发送一次
 
         iface.poll(timestamp, &mut device, &mut sockets);
 
@@ -141,40 +127,33 @@ fn run_client(
             info!("Client socket bound to port 7969");
         }
 
-        let now = Instant::now();
-        if now.duration_since(last_send) >= send_interval {
-            let server_endpoint = (IpAddress::v4(192, 168, 69, 11), 6969);
-            let data = b"Hello from sender!";
-            match socket.send_slice(data, server_endpoint) {
-                Ok(_) => {
-                    info!("Client sent: {:?} to {:?}", data, server_endpoint);
-                    last_send = now; // 更新最后发送时间
-                },
-                Err(e) => println!("Failed to send datas: {}", e),
-            }            
+        let server_endpoint = (IpAddress::v4(192, 168, 69, 11), 6969);
+        let data = b"Hello from sender!";
+        match socket.send_slice(data, server_endpoint) {
+            Ok(_) => info!("Client sent: {:?} to {:?}", data, server_endpoint),
+            Err(e) => println!("Failed to send datas: {}", e),
         }
 
         if let Ok((data, endpoint)) = socket.recv() {
             info!("Client received: {:?} from {}", data, endpoint);
         }
 
-        // phy_wait(fd, iface.poll_delay(timestamp, &sockets))
-        //     .expect("wait error");
+        thread::sleep(std::time::Duration::from_millis(100));
     }
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // utils::setup_logging("");
+    utils::setup_logging("");
 
     // 创建交换机
     let mut switch = Switch::new();
     
     // 创建用于向交换机发送数据的环形缓冲区
-    let switch_buffer = RingBuffer::new(16);
+    let switch_buffer = RingBuffer::new();
     let (switch_producer, switch_consumer) = switch_buffer.split();
 
     // 为客户端创建通道
-    let (client_sender, client_receiver) = create_port_channel(16);
+    let (client_sender, client_receiver) = create_port_channel();
     let mut client_capture = FrameCapture::new(
         "tap2",
         Medium::Ethernet,
@@ -183,7 +162,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // 为服务端创建通道
-    let (server_sender, server_receiver) = create_port_channel(16);
+    let (server_sender, server_receiver) = create_port_channel();
     let mut server_capture = FrameCapture::new(
         "tap1",
         Medium::Ethernet,
@@ -205,6 +184,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     client_capture.set_port_no(client_port);
     server_capture.set_port_no(server_port);
 
+    // 预先添加MAC地址表项
     switch.add_mac_list(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]), client_port);
     switch.add_mac_list(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]), server_port);
 
@@ -225,12 +205,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 交换机线程
     let switch_thread = thread::spawn(move || {
         loop {
-            while let Some((frame, in_port)) = switch_consumer.try_pop() {
+            if let Some((frame, in_port)) = switch_consumer.try_pop_switch_frame() {
                 println!("Switch processing frame from port {}", in_port);
                 switch.process_frame(frame, in_port);
                 switch.print_mac_table();
             }
-            // 减少睡眠时间以提高响应性
             thread::sleep(std::time::Duration::from_micros(1000));
         }
     });

@@ -502,7 +502,11 @@ impl Interface {
     /// [Duration]: struct.Duration.html
     pub fn poll_delay(&mut self, timestamp: Instant, sockets: &SocketSet<'_>) -> Option<Duration> {
         match self.poll_at(timestamp, sockets) {
-            Some(poll_at) if timestamp < poll_at => Some(poll_at - timestamp),
+            Some(poll_at) if timestamp < poll_at => {
+                let result = Some(poll_at - timestamp);
+                println!("poll_delay: {:?}", result);
+                result
+            },
             Some(_) => Some(Duration::from_millis(0)),
             _ => None,
         }
