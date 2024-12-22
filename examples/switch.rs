@@ -2,12 +2,8 @@ mod utils;
 
 use log::{debug, info};
 use std::collections::HashMap;
-use std::os::unix::io::AsRawFd;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
-use std::cell::UnsafeCell;
-use std::ptr;
-use spin::Mutex;
+use std::sync::{Arc, Mutex};
+use spin;
 use std::thread;
 use smoltcp::time::Instant;
 
@@ -17,158 +13,128 @@ use smoltcp::socket::udp;
 use smoltcp::time::Instant as SmoltcpInstant;
 use smoltcp::wire::{EthernetAddress, EthernetFrame, IpAddress, IpCidr, Ipv4Address, Ipv6Address};
 
-// 无锁环形缓冲区实现
+// 使用枚举区分两种数据类型
 #[derive(Debug)]
-pub struct RingBuffer<T> {
-    buffer: Box<[UnsafeCell<T>]>,
-    head: AtomicUsize,
-    tail: AtomicUsize,
-    capacity: usize,
+enum BufferData {
+    Frame(Vec<u8>),
+    SwitchFrame((Vec<u8>, usize)),
 }
 
-unsafe impl<T: Send> Send for RingBuffer<T> {}
-unsafe impl<T: Send> Sync for RingBuffer<T> {}
-
-#[derive(Clone, Debug)]
-pub struct Producer<T> {
-    buffer: Arc<RingBuffer<T>>,
+#[derive(Debug)]
+pub struct RingBuffer {
+    buffer: Arc<Mutex<Option<BufferData>>>,
 }
 
 #[derive(Clone, Debug)]
-pub struct Consumer<T> {
-    buffer: Arc<RingBuffer<T>>,
+pub struct Producer {
+    buffer: Arc<Mutex<Option<BufferData>>>,
 }
 
-//
-impl<T> RingBuffer<T> {
-    pub fn new(capacity: usize) -> Self {
-        let mut buffer = Vec::with_capacity(capacity);
-        unsafe {
-            buffer.set_len(capacity);
-        }
-        
+#[derive(Clone, Debug)]
+pub struct Consumer {
+    buffer: Arc<Mutex<Option<BufferData>>>,
+}
+
+impl RingBuffer {
+    pub fn new() -> Self {
         RingBuffer {
-            buffer: buffer.into_boxed_slice(),
-            head: AtomicUsize::new(0),
-            tail: AtomicUsize::new(0),
-            capacity,
+            buffer: Arc::new(Mutex::new(None)),
         }
     }
 
-    pub fn split(self) -> (Producer<T>, Consumer<T>) {
-        let buffer = Arc::new(self);
+    pub fn split(self) -> (Producer, Consumer) {
         (
             Producer {
-                buffer: buffer.clone(),
+                buffer: self.buffer.clone(),
             },
             Consumer {
-                buffer,
+                buffer: self.buffer,
             }
         )
     }
 }
 
-impl<T> Producer<T> {
-    pub fn try_push(&self, value: T) -> Result<(), T> {
-        let buffer = &self.buffer;
-        let tail = buffer.tail.load(Ordering::Relaxed);
-        let next_tail = (tail + 1) % buffer.capacity;
-        let head = buffer.head.load(Ordering::Acquire);
-        
-        // println!("RingBuffer try_push: head={}, tail={}, next_tail={}, capacity={}", 
-        //     head, tail, next_tail, buffer.capacity);
-        
-        // 如果是Vec<u8>类型,打印帧内容
-        if let Some(frame_data) = unsafe { (&value as *const T).cast::<Vec<u8>>().as_ref() } {
-            println!("\nPushing frame data:");
-            print_ethernet_frame(frame_data);
-        }
-        
-        if next_tail == head {
-            println!("RingBuffer is full!");
+impl Producer {
+    // 发送普通数据包
+    pub fn try_push_frame(&self, value: Vec<u8>) -> Result<(), Vec<u8>> {
+        let mut buffer = self.buffer.lock().unwrap();
+        if buffer.is_some() {
+            println!("Buffer is full!");
             return Err(value);
         }
+        
+        *buffer = Some(BufferData::Frame(value));
+        println!("Push frame success!");
+        Ok(())
+    }
 
-        unsafe {
-            (*buffer.buffer[tail].get()) = value;
+    // 发送带端口号的数据包
+    pub fn try_push_switch_frame(&self, value: (Vec<u8>, usize)) -> Result<(), (Vec<u8>, usize)> {
+        let mut buffer = self.buffer.lock().unwrap();
+        if buffer.is_some() {
+            println!("Buffer is full!");
+            return Err(value);
         }
         
-        buffer.tail.store(next_tail, Ordering::Release);
-        println!("RingBuffer push success: new tail={}", next_tail);
-
-        // 如果是 Vec<u8> 类型,打印帧内容
-        for i in 0..buffer.tail.load(Ordering::Relaxed) {
-            if let Some(frame_data) = unsafe { buffer.buffer[i].get().cast::<Vec<u8>>().as_ref() } {
-                debug!("Pushed frame data:");
-                debug!("frame_data: {:?}", frame_data);
-                // print_ethernet_frame(frame_data);
-            }
-        }
-
+        *buffer = Some(BufferData::SwitchFrame(value));
+        println!("Push switch frame success!");
         Ok(())
     }
 }
 
-impl<T> Consumer<T> {
-    pub fn try_pop(&self) -> Option<T> {
-        let buffer = &self.buffer;
-        let head = buffer.head.load(Ordering::Relaxed);
-        let tail = buffer.tail.load(Ordering::Acquire);
-        
-        // debug!("\x1b[35mtest test test\x1b[0m");
-        // println!("RingBuffer try_pop: head={}, tail={}, capacity={}", 
-        //     head, tail, buffer.capacity);
-
-        if head == tail {
-            // println!("RingBuffer is empty!");
-            return None;
-        }
-
-        let value = unsafe {
-            ptr::read(buffer.buffer[head].get())
-        };
-        
-        // 如果是Vec<u8>类型，打印帧内容
-        if let Some(frame_data) = unsafe { (&value as *const T).cast::<Vec<u8>>().as_ref() } {
+impl Consumer {
+    // 获取普通数据包
+    pub fn try_pop_frame(&self) -> Option<Vec<u8>> {
+        let mut buffer = self.buffer.lock().unwrap();
+        if let Some(BufferData::Frame(data)) = buffer.take() {
             println!("\nPopped frame data:");
-            print_ethernet_frame(frame_data);
+            print_ethernet_frame(&data);
+            println!("Pop frame success!");
+            Some(data)
+        } else {
+            None
         }
+    }
 
-        let next_head = (head + 1) % buffer.capacity;
-        buffer.head.store(next_head, Ordering::Release);
-        println!("RingBuffer pop success: new head={}", next_head);
-        
-        Some(value)
+    // 获取带端口号的数据包
+    pub fn try_pop_switch_frame(&self) -> Option<(Vec<u8>, usize)> {
+        let mut buffer = self.buffer.lock().unwrap();
+        if let Some(BufferData::SwitchFrame(data)) = buffer.take() {
+            println!("\nPopped switch frame data:");
+            print_ethernet_frame(&data.0);
+            println!("From port: {}", data.1);
+            println!("Pop switch frame success!");
+            Some(data)
+        } else {
+            None
+        }
     }
 }
 
 // 端口发送者和接收者
 pub struct PortSender {
-    producer: Producer<Vec<u8>>,
+    producer: Producer,
 }
 
 impl PortSender {
     pub fn send(&self, data: Vec<u8>) -> Result<(), Vec<u8>> {
-        let result = self.producer.try_push(data);
-        result
+        self.producer.try_push_frame(data)
     }
 }
 
 pub struct PortReceiver {
-    consumer: Consumer<Vec<u8>>,
+    consumer: Consumer,
 }
 
 impl PortReceiver {
     pub fn try_recv(&self) -> Option<Vec<u8>> {
-        let result = self.consumer.try_pop();
-        println!("PortReceiver try_recv: {:?}", result);
-        result
+        self.consumer.try_pop_frame()
     }
 }
 
 // 创建端口通道
-pub fn create_port_channel(capacity: usize) -> (PortSender, PortReceiver) {
-    let ring_buffer = RingBuffer::new(capacity);
+pub fn create_port_channel() -> (PortSender, PortReceiver) {
+    let ring_buffer = RingBuffer::new();
     let (producer, consumer) = ring_buffer.split();
     (
         PortSender { producer },
@@ -184,14 +150,14 @@ struct SwitchPort {
 }
 
 struct Switch {
-    mac_table: Arc<Mutex<HashMap<EthernetAddress, usize>>>,
+    mac_table: Arc<spin::Mutex<HashMap<EthernetAddress, usize>>>,
     ports: Vec<SwitchPort>,
 }
 
 impl Switch {
     fn new() -> Self {
         Switch {
-            mac_table: Arc::new(Mutex::new(HashMap::new())),
+            mac_table: Arc::new(spin::Mutex::new(HashMap::new())),
             ports: Vec::new(),
         }
     }
@@ -270,11 +236,11 @@ impl Switch {
 
 // 帧捕获设备
 struct FrameCapture {
-    inner: Arc<Mutex<TunTapInterface>>,
+    inner: Arc<spin::Mutex<TunTapInterface>>,
     name: String,
     port_no: usize,
     // 发送通道：发送 (数据包, 源端口号) 到交换机
-    frame_sender: Producer<(Vec<u8>, usize)>,
+    frame_sender: Producer,
     // 接收通道：从交换机接收数据包
     frame_receiver: PortReceiver,
 }
@@ -283,10 +249,10 @@ impl FrameCapture {
     fn new(
         name: &str,
         medium: Medium,
-        frame_sender: Producer<(Vec<u8>, usize)>,
+        frame_sender: Producer,
         frame_receiver: PortReceiver,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let inner = Arc::new(Mutex::new(TunTapInterface::new(name, medium)?));
+        let inner = Arc::new(spin::Mutex::new(TunTapInterface::new(name, medium)?));
         Ok(FrameCapture {
             inner,
             name: name.to_string(),
@@ -298,38 +264,6 @@ impl FrameCapture {
 
     fn set_port_no(&mut self, port_no: usize) {
         self.port_no = port_no;
-    }
-
-    fn as_raw_fd(&self) -> i32 {
-        self.inner.lock().as_raw_fd()
-    }
-
-    // 处理从交换机来的数据
-    fn process_switch_data(&mut self, timestamp: Instant) -> Option<(<FrameCapture as Device>::RxToken<'_>, <FrameCapture as Device>::TxToken<'_>)> {
-        println!("\n[{}] Checking for frames from switch", self.name);
-        
-        // 优先检查是否有来自交换机的数据
-        if let Some(frame) = self.frame_receiver.try_recv() {
-            println!("frame {:?}!", frame);
-            println!("\n[{}] Received frame from switch, writing to tap", self.name);
-            // 直接写入到tap设备
-            return Some((
-                FrameCaptureRxToken {
-                    buffer: frame,
-                    name: self.name.clone(),
-                },
-                FrameCaptureTxToken {
-                    inner: self.inner.lock().transmit(timestamp).unwrap(),
-                    sender: &self.frame_sender,
-                    port_no: self.port_no,
-                    name: self.name.clone(),
-                }
-            ));
-        } else {
-            println!("[{}] No frames from switch", self.name);
-        }
-
-        None
     }
 }
 
@@ -344,9 +278,8 @@ impl Device for FrameCapture {
     fn receive(&mut self, timestamp: Instant) -> Option<(Self::RxToken<'_>, Self::TxToken<'_>)> {
         println!("\n[{}] Checking for frames from switch", self.name);
         // 优先检查是否有来自交换机的数据
-
         if let Some(frame) = self.frame_receiver.try_recv() {
-            println!("frame {:?}!", frame);
+            println!("frame received from switch!");
             println!("\n[{}] Received frame from switch, writing to tap", self.name);
             // 直接写入到tap设备
             return Some((
@@ -400,7 +333,7 @@ impl Device for FrameCapture {
     }
 }
 
-// 接收
+// 接收Token
 struct FrameCaptureRxToken {
     buffer: Vec<u8>,
     name: String,
@@ -412,15 +345,14 @@ impl RxToken for FrameCaptureRxToken {
         F: FnOnce(&mut [u8]) -> R,
     {
         println!("\n[{}] Processing received frame of size: {}", self.name, self.buffer.len());
-        // print_frame(&self.buffer);
         f(&mut self.buffer)
     }
 }
 
-// 发送
+// 发送Token
 struct FrameCaptureTxToken<'a> {
     inner: <TunTapInterface as Device>::TxToken<'a>,
-    sender: &'a Producer<(Vec<u8>, usize)>,
+    sender: &'a Producer,
     port_no: usize,
     name: String,
 }
@@ -434,7 +366,7 @@ impl<'a> TxToken for FrameCaptureTxToken<'a> {
             let result = f(buffer);
             println!("FrameCaptureTxToken consume: {:?}", buffer);
             println!("\n[{}] Sending frame to switch from port {}", self.name, self.port_no);
-            let _ = self.sender.try_push((buffer.to_vec(), self.port_no));
+            let _ = self.sender.try_push_switch_frame((buffer.to_vec(), self.port_no));
             result
         })
     }
@@ -453,17 +385,14 @@ fn print_ethernet_frame(buffer: &[u8]) {
     println!();
 
     if buffer.len() >= 14 {
-        // 尝试解析以太网帧头
         if let Ok(frame) = EthernetFrame::new_checked(buffer) {
             println!("Ethernet Header:");
             println!("  Dst MAC: {}", frame.dst_addr());
             println!("  Src MAC: {}", frame.src_addr());
             println!("  Type: {:?}", frame.ethertype());
             
-            // 打印负载长度
             println!("  Payload length: {} bytes", frame.payload().len());
             
-            // 简单打印前32字节的负载(如果有)
             let payload = frame.payload();
             if !payload.is_empty() {
                 println!("  Payload preview (first 32 bytes):");
@@ -487,8 +416,6 @@ fn print_ethernet_frame(buffer: &[u8]) {
 fn run_server(
     mut device: FrameCapture,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let fd = device.as_raw_fd();
-
     let mut config = Config::new(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]).into());
     config.random_seed = rand::random();
 
@@ -528,9 +455,6 @@ fn run_server(
         println!("\x1b[34m------------------Server loop------------------\x1b[0m");
         let timestamp = SmoltcpInstant::now();
 
-        // // 处理从交换机来的数据
-        // device.process_switch_data(timestamp);
-
         iface.poll(timestamp, &mut device, &mut sockets);
 
         let socket = sockets.get_mut::<udp::Socket>(udp_handle);
@@ -547,16 +471,13 @@ fn run_server(
             info!("Server sent response: {:?} to {}", response, endpoint);
         }
 
-        phy_wait(fd, iface.poll_delay(timestamp, &sockets))
-            .expect("wait error");
-    };
+        thread::sleep(std::time::Duration::from_millis(100));
+    }
 }
 
 fn run_client(
     mut device: FrameCapture,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let fd = device.as_raw_fd();
-
     let mut config = Config::new(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]).into());
     config.random_seed = rand::random();
 
@@ -596,9 +517,6 @@ fn run_client(
         println!("\x1b[34m------------------Client loop------------------\x1b[0m");
         let timestamp = SmoltcpInstant::now();
 
-        // // 处理从交换机来的数据
-        // device.process_switch_data(timestamp);
-
         iface.poll(timestamp, &mut device, &mut sockets);
 
         let socket = sockets.get_mut::<udp::Socket>(udp_handle);
@@ -618,8 +536,7 @@ fn run_client(
             info!("Client received: {:?} from {}", data, endpoint);
         }
 
-        phy_wait(fd, iface.poll_delay(timestamp, &sockets))
-            .expect("wait error");
+        thread::sleep(std::time::Duration::from_millis(100));
     }
 }
 
@@ -630,11 +547,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut switch = Switch::new();
     
     // 创建用于向交换机发送数据的环形缓冲区
-    let switch_buffer = RingBuffer::new(16);
+    let switch_buffer = RingBuffer::new();
     let (switch_producer, switch_consumer) = switch_buffer.split();
 
     // 为客户端创建通道
-    let (client_sender, client_receiver) = create_port_channel(16);
+    let (client_sender, client_receiver) = create_port_channel();
     let mut client_capture = FrameCapture::new(
         "tap2",
         Medium::Ethernet,
@@ -643,7 +560,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // 为服务端创建通道
-    let (server_sender, server_receiver) = create_port_channel(16);
+    let (server_sender, server_receiver) = create_port_channel();
     let mut server_capture = FrameCapture::new(
         "tap1",
         Medium::Ethernet,
@@ -665,6 +582,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     client_capture.set_port_no(client_port);
     server_capture.set_port_no(server_port);
 
+    // 预先添加MAC地址表项
     switch.add_mac_list(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]), client_port);
     switch.add_mac_list(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]), server_port);
 
@@ -685,12 +603,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 交换机线程
     let switch_thread = thread::spawn(move || {
         loop {
-            while let Some((frame, in_port)) = switch_consumer.try_pop() {
+            if let Some((frame, in_port)) = switch_consumer.try_pop_switch_frame() {
                 println!("Switch processing frame from port {}", in_port);
                 switch.process_frame(frame, in_port);
                 switch.print_mac_table();
             }
-            // 减少睡眠时间以提高响应性
             thread::sleep(std::time::Duration::from_micros(1000));
         }
     });
