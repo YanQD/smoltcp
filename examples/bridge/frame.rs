@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use smoltcp::{phy::{Device, DeviceCapabilities, Medium, RxToken, TunTapInterface, TxToken}, time::Instant};
+use smoltcp::{phy::{Device, DeviceCapabilities, RxToken, TxToken}, time::Instant};
 use spin::Mutex;
 use crate::{bridge_device::{boxed_object_safe_device, BridgeDevice, ObjectSafeDeviceOps}, switch::{PortReceiver, Producer}};
 
