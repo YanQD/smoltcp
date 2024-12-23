@@ -15,12 +15,14 @@ pub struct DeviceWrapper {
 }
 
 impl DeviceWrapper {
+    #[allow(unused)]
     pub fn new(inner: Box<dyn ObjectSafeDeviceOps>) -> Self {
         DeviceWrapper { 
             inner
         }
     }
 
+    #[allow(unused)]
     pub fn into_inner(self) -> Box<dyn ObjectSafeDeviceOps> {
         self.inner
     }
@@ -138,7 +140,7 @@ impl<'a, R: RxToken + 'a> ObjectSafeRxTokenOps<'a> for ObjectSafeRxToken<'a, R> 
 }
 
 pub struct RxTokenWrapper<'a> {
-    rx: Box<dyn ObjectSafeRxTokenOps<'a> + 'a>,
+    pub rx: Box<dyn ObjectSafeRxTokenOps<'a> + 'a>,
 }
 
 impl<'a> RxToken for RxTokenWrapper<'a> {
@@ -189,10 +191,11 @@ impl<'a, T: TxToken + 'a> ObjectSafeTxTokenOps<'a> for ObjectSafeTxToken<'a, T> 
 }
 
 pub struct TxTokenWrapper<'a> {
-    tx: Box<dyn ObjectSafeTxTokenOps<'a> + 'a>,
+    pub tx: Box<dyn ObjectSafeTxTokenOps<'a> + 'a>,
 }
 
 impl<'a> TxTokenWrapper<'a> {
+    #[allow(unused)]
     pub fn new(token: Box<dyn ObjectSafeTxTokenOps<'a> + 'a>) -> Self {
         TxTokenWrapper { 
             tx: token
@@ -222,46 +225,56 @@ pub struct BridgeDevice {
 }
 
 impl BridgeDevice {
+    #[allow(unused)]
     pub fn new<D: Device + 'static>(device: D) -> Self {
         BridgeDevice {
             inner: Box::new(ObjectSafeDevice::new(device)),
         }
     }
 
+    #[allow(unused)]
     pub fn transmit_with(&mut self, timestamp: Instant) -> Option<Box<dyn ObjectSafeTxTokenOps + '_>> {
         self.inner.transmit(timestamp)
     }
 
+    #[allow(unused)]
     pub fn receive_with(&mut self, timestamp: Instant) -> Option<(Box<dyn ObjectSafeRxTokenOps + '_>, Box<dyn ObjectSafeTxTokenOps + '_>)> {
         self.inner.receive(timestamp)
     }
 
+    #[allow(unused)]
     pub fn capabilities_with(&self) -> DeviceCapabilities {
         self.inner.capabilities()
     }
 
+    #[allow(unused)]
     pub fn get_inner_mut(&mut self) -> &mut Box<dyn ObjectSafeDeviceOps> {
         &mut self.inner
     }
 
+    #[allow(unused)]
     pub fn get_inner(&self) -> &Box<dyn ObjectSafeDeviceOps> {
         &self.inner
     }
 
+    #[allow(unused)]
     pub fn into_inner(self) -> Box<dyn ObjectSafeDeviceOps> {
         self.inner
     }
 
+    #[allow(unused)]
     pub fn from_box(device: Box<dyn ObjectSafeDeviceOps>) -> Self {
         Self { 
             inner: device 
         }
     }
 
+    #[allow(unused)]
     pub fn from_object_safe(device: Box<dyn ObjectSafeDeviceOps>) -> Self {
         BridgeDevice { inner: device }
     }
 
+    #[allow(unused)]
     pub fn as_mut_bridge_device(device: &mut Box<dyn ObjectSafeDeviceOps>) -> &mut BridgeDevice {
         // 这是不安全的，因为我们在进行类型转换
         // 只有当我们确定 Box<dyn ObjectSafeDeviceOps> 确实是 BridgeDevice 时才能这样做
@@ -290,6 +303,9 @@ impl Device for BridgeDevice {
         )
     }
 }
+
+unsafe impl Send for BridgeDevice {}
+unsafe impl Sync for BridgeDevice {}
 
 // Helper function to create a boxed ObjectSafeDeviceOps
 pub fn boxed_object_safe_device<D: Device + 'static>(device: D) -> Box<dyn ObjectSafeDeviceOps> {
@@ -364,3 +380,4 @@ mod tests {
         debug!("Compatible object-safe devices test completed successfully");
     }
 }
+

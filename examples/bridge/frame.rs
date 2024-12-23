@@ -1,35 +1,49 @@
 use std::sync::Arc;
-
 use smoltcp::{phy::{Device, DeviceCapabilities, Medium, RxToken, TunTapInterface, TxToken}, time::Instant};
+use spin::Mutex;
+use crate::{bridge_device::{boxed_object_safe_device, BridgeDevice, ObjectSafeDeviceOps}, switch::{PortReceiver, Producer}};
 
-use crate::switch::{PortReceiver, Producer};
-
-// 帧捕获设备
 pub struct FrameCapture {
-    inner: Arc<spin::Mutex<TunTapInterface>>,
+    inner: Arc<Mutex<BridgeDevice>>,
     name: String,
     port_no: usize,
-    // 发送通道：发送 (数据包, 源端口号) 到交换机
     frame_sender: Producer,
-    // 接收通道：从交换机接收数据包
     frame_receiver: PortReceiver,
 }
 
 impl FrameCapture {
-    pub fn new(
+    #[allow(unused)]
+    pub fn new<D: Device + 'static>(
         name: &str,
-        medium: Medium,
+        device: D,
         frame_sender: Producer,
         frame_receiver: PortReceiver,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let inner = Arc::new(spin::Mutex::new(TunTapInterface::new(name, medium)?));
+        let bridge_device = boxed_object_safe_device(device);
+
         Ok(FrameCapture {
-            inner,
+            inner: Arc::new(Mutex::new(BridgeDevice::from_object_safe(bridge_device))),
             name: name.to_string(),
             port_no: 0,
             frame_sender,
             frame_receiver,
         })
+    }
+
+    #[allow(unused)]
+    pub fn from_device(
+        name: &str,
+        device: Box<dyn ObjectSafeDeviceOps>,
+        frame_sender: Producer,
+        frame_receiver: PortReceiver,
+    ) -> Self {
+        FrameCapture {
+            inner: Arc::new(Mutex::new(BridgeDevice::from_object_safe(device))),
+            name: name.to_string(),
+            port_no: 0,
+            frame_sender,
+            frame_receiver,
+        }
     }
 
     pub fn set_port_no(&mut self, port_no: usize) {
@@ -38,8 +52,8 @@ impl FrameCapture {
 }
 
 impl Device for FrameCapture {
-    type RxToken<'a> = FrameCaptureRxToken;
-    type TxToken<'a> = FrameCaptureTxToken<'a>;
+    type RxToken<'a> = FrameCaptureRxToken where Self: 'a;
+    type TxToken<'a> = FrameCaptureTxToken<'a> where Self: 'a;
 
     fn capabilities(&self) -> DeviceCapabilities {
         self.inner.lock().capabilities()
@@ -47,54 +61,58 @@ impl Device for FrameCapture {
 
     fn receive(&mut self, timestamp: Instant) -> Option<(Self::RxToken<'_>, Self::TxToken<'_>)> {
         println!("\n[{}] Checking for frames from switch", self.name);
-        // 优先检查是否有来自交换机的数据
+        // First check for frames from switch
         if let Some(frame) = self.frame_receiver.try_recv() {
-            println!("frame received from switch!");
-            println!("\n[{}] Received frame from switch, writing to tap", self.name);
-            // 直接写入到tap设备
+            println!("\n[{}] Received frame from switch, writing to device", self.name);
+            
             return Some((
                 FrameCaptureRxToken {
                     buffer: frame,
                     name: self.name.clone(),
                 },
                 FrameCaptureTxToken {
-                    inner: self.inner.lock().transmit(timestamp).unwrap(),
+                    buffer: Vec::new(),
+                    max_len: 0,
                     sender: &self.frame_sender,
                     port_no: self.port_no,
                     name: self.name.clone(),
                 }
             ));
-        } else {
-            println!("[{}] No frames from switch", self.name);
         }
-    
-        // 然后检查tap设备是否有新数据
-        let result = self.inner.lock().receive(timestamp).map(|(rx, tx)| {
-            (
-                FrameCaptureRxToken {
-                    buffer: rx.consume(|buffer| buffer.to_vec()),
-                    name: self.name.clone(),
-                },
-                FrameCaptureTxToken {
-                    inner: tx,
-                    sender: &self.frame_sender,
-                    port_no: self.port_no,
-                    name: self.name.clone(),
-                },
-            )
+        
+        println!("[{}] No frames from switch", self.name);
+
+        // Then check the underlying device
+        let mut inner = self.inner.lock();
+        let (mut rx, _tx) = inner.receive(timestamp)?;
+        
+        // Immediately consume the rx token to get the data
+        let mut rx_buffer = Vec::new();
+        rx.rx.consume_with(&mut |data| {
+            rx_buffer.extend_from_slice(data);
         });
-
-        if result.is_none() {
-            println!("[{}] No frames from tap device", self.name);
-        }
-
-        result
+        
+        Some((
+            FrameCaptureRxToken {
+                buffer: rx_buffer,
+                name: self.name.clone(),
+            },
+            FrameCaptureTxToken {
+                buffer: Vec::new(),
+                max_len: 0,
+                sender: &self.frame_sender,
+                port_no: self.port_no,
+                name: self.name.clone(),
+            }
+        ))
     }
 
     fn transmit(&mut self, timestamp: Instant) -> Option<Self::TxToken<'_>> {
-        self.inner.lock().transmit(timestamp).map(|tx| {
+        let mut inner = self.inner.lock();
+        inner.transmit(timestamp).map(|_tx| {
             FrameCaptureTxToken {
-                inner: tx,
+                buffer: Vec::new(),
+                max_len: 0,
                 sender: &self.frame_sender,
                 port_no: self.port_no,
                 name: self.name.clone(),
@@ -102,6 +120,7 @@ impl Device for FrameCapture {
         })
     }
 }
+
 
 // 接收Token
 pub struct FrameCaptureRxToken {
@@ -121,24 +140,26 @@ impl RxToken for FrameCaptureRxToken {
 
 // 发送Token
 pub struct FrameCaptureTxToken<'a> {
-    inner: <TunTapInterface as Device>::TxToken<'a>,
+    buffer: Vec<u8>,
+    max_len: usize,
     sender: &'a Producer,
     port_no: usize,
     name: String,
 }
 
 impl<'a> TxToken for FrameCaptureTxToken<'a> {
-    fn consume<R, F>(self, len: usize, f: F) -> R
+    fn consume<R, F>(mut self, len: usize, f: F) -> R
     where
         F: FnOnce(&mut [u8]) -> R,
     {
-        self.inner.consume(len, |buffer| {
-            let result = f(buffer);
-            println!("FrameCaptureTxToken consume: {:?}", buffer);
-            println!("\n[{}] Sending frame to switch from port {}", self.name, self.port_no);
-            let _ = self.sender.try_push_switch_frame((buffer.to_vec(), self.port_no));
-            result
-        })
+        self.max_len = len;
+        self.buffer.resize(len, 0);
+        
+        let result = f(&mut self.buffer);
+        
+        println!("\n[{}] Sending frame to switch from port {}", self.name, self.port_no);
+        let _ = self.sender.try_push_switch_frame((self.buffer.clone(), self.port_no));
+        
+        result
     }
 }
-

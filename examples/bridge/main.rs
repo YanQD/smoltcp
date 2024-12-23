@@ -10,7 +10,7 @@ use switch::{create_port_channel, RingBuffer, Switch};
 use std::thread;
 
 use smoltcp::iface::{Config, Interface, SocketSet};
-use smoltcp::phy::Medium;
+use smoltcp::phy::{Medium, TunTapInterface};
 use smoltcp::socket::udp;
 use smoltcp::time::Instant as SmoltcpInstant;
 use smoltcp::wire::{EthernetAddress, IpAddress, IpCidr, Ipv4Address, Ipv6Address};
@@ -154,21 +154,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 为客户端创建通道
     let (client_sender, client_receiver) = create_port_channel();
-    let mut client_capture = FrameCapture::new(
-        "tap2",
-        Medium::Ethernet,
-        switch_producer.clone(),
-        client_receiver,
-    )?;
+
+    let mut client_capture = {
+        let tap2 = TunTapInterface::new("tap2", Medium::Ethernet)?;
+        FrameCapture::new(
+            "tap2",
+            tap2,
+            switch_producer.clone(),
+            client_receiver,
+        )?
+    };
 
     // 为服务端创建通道
     let (server_sender, server_receiver) = create_port_channel();
-    let mut server_capture = FrameCapture::new(
-        "tap1",
-        Medium::Ethernet,
-        switch_producer.clone(),
-        server_receiver,
-    )?;
+    let mut server_capture = {
+        let tap1 = TunTapInterface::new("tap1", Medium::Ethernet)?;
+        FrameCapture::new(
+            "tap1",
+            tap1,
+            switch_producer.clone(),
+            server_receiver,
+        )?
+    };
 
     // 添加端口到交换机
     let client_port = switch.add_port(
