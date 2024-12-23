@@ -1,7 +1,13 @@
-use std::sync::Arc;
-use smoltcp::{phy::{Device, DeviceCapabilities, RxToken, TxToken}, time::Instant};
 use spin::Mutex;
-use crate::{bridge_device::{boxed_object_safe_device, BridgeDevice, ObjectSafeDeviceOps}, switch::{PortReceiver, Producer}};
+use std::sync::Arc;
+use smoltcp::{
+    phy::{Device, DeviceCapabilities, RxToken, TxToken}, 
+    time::Instant
+};
+use crate::{
+    bridge_device::{boxed_object_safe_device, BridgeDevice, ObjectSafeDeviceOps}, 
+    switch::{PortReceiver, Producer}
+};
 
 pub struct FrameCapture {
     inner: Arc<Mutex<BridgeDevice>>,
@@ -71,6 +77,7 @@ impl Device for FrameCapture {
                     name: self.name.clone(),
                 },
                 FrameCaptureTxToken {
+                    device: Arc::clone(&self.inner),
                     buffer: Vec::new(),
                     max_len: 0,
                     sender: &self.frame_sender,
@@ -98,6 +105,7 @@ impl Device for FrameCapture {
                 name: self.name.clone(),
             },
             FrameCaptureTxToken {
+                device: Arc::clone(&self.inner),
                 buffer: Vec::new(),
                 max_len: 0,
                 sender: &self.frame_sender,
@@ -107,20 +115,17 @@ impl Device for FrameCapture {
         ))
     }
 
-    fn transmit(&mut self, timestamp: Instant) -> Option<Self::TxToken<'_>> {
-        let mut inner = self.inner.lock();
-        inner.transmit(timestamp).map(|_tx| {
-            FrameCaptureTxToken {
+    fn transmit(&mut self, _timestamp: Instant) -> Option<Self::TxToken<'_>> {
+        Some(FrameCaptureTxToken {
+            device: Arc::clone(&self.inner), // 克隆 Arc
                 buffer: Vec::new(),
                 max_len: 0,
                 sender: &self.frame_sender,
                 port_no: self.port_no,
                 name: self.name.clone(),
-            }
         })
     }
 }
-
 
 // 接收Token
 pub struct FrameCaptureRxToken {
@@ -140,6 +145,7 @@ impl RxToken for FrameCaptureRxToken {
 
 // 发送Token
 pub struct FrameCaptureTxToken<'a> {
+    device: Arc<Mutex<BridgeDevice>>,
     buffer: Vec<u8>,
     max_len: usize,
     sender: &'a Producer,
@@ -156,6 +162,12 @@ impl<'a> TxToken for FrameCaptureTxToken<'a> {
         self.buffer.resize(len, 0);
         
         let result = f(&mut self.buffer);
+
+        if let Some(tx) = self.device.lock().transmit(Instant::now()) {
+            tx.consume(len, |tx_buffer| {
+                tx_buffer.copy_from_slice(&self.buffer);
+            });
+        }
         
         println!("\n[{}] Sending frame to switch from port {}", self.name, self.port_no);
         let _ = self.sender.try_push_switch_frame((self.buffer.clone(), self.port_no));

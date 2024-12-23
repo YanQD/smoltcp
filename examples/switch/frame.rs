@@ -1,10 +1,14 @@
+use spin::Mutex;
 use std::sync::Arc;
-use smoltcp::{phy::{Device, DeviceCapabilities, Medium, RxToken, TunTapInterface, TxToken}, time::Instant};
+use smoltcp::{
+    time::Instant,
+    phy::{Device, DeviceCapabilities, Medium, RxToken, TunTapInterface, TxToken}, 
+};
 use crate::switch::{PortReceiver, Producer};
 
 // 帧捕获设备
 pub struct FrameCapture {
-    inner: Arc<spin::Mutex<TunTapInterface>>,
+    inner: Arc<Mutex<TunTapInterface>>,
     name: String,
     port_no: usize,
     // 发送通道：发送 (数据包, 源端口号) 到交换机
@@ -20,7 +24,7 @@ impl FrameCapture {
         frame_sender: Producer,
         frame_receiver: PortReceiver,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let inner = Arc::new(spin::Mutex::new(TunTapInterface::new(name, medium)?));
+        let inner = Arc::new(Mutex::new(TunTapInterface::new(name, medium)?));
         Ok(FrameCapture {
             inner,
             name: name.to_string(),
@@ -44,59 +48,46 @@ impl Device for FrameCapture {
     }
 
     fn receive(&mut self, timestamp: Instant) -> Option<(Self::RxToken<'_>, Self::TxToken<'_>)> {
-        println!("\n[{}] Checking for frames from switch", self.name);
-        // 优先检查是否有来自交换机的数据
         if let Some(frame) = self.frame_receiver.try_recv() {
-            println!("frame received from switch!");
-            println!("\n[{}] Received frame from switch, writing to tap", self.name);
-            // 直接写入到tap设备
             return Some((
                 FrameCaptureRxToken {
                     buffer: frame,
                     name: self.name.clone(),
                 },
                 FrameCaptureTxToken {
-                    inner: self.inner.lock().transmit(timestamp).unwrap(),
+                    device: Arc::clone(&self.inner),
                     sender: &self.frame_sender,
                     port_no: self.port_no,
                     name: self.name.clone(),
                 }
             ));
-        } else {
-            println!("[{}] No frames from switch", self.name);
         }
     
-        // 然后检查tap设备是否有新数据
-        let result = self.inner.lock().receive(timestamp).map(|(rx, tx)| {
-            (
+        // 检查 tap 设备
+        if let Some((rx, _)) = self.inner.lock().receive(timestamp) {
+            return Some((
                 FrameCaptureRxToken {
                     buffer: rx.consume(|buffer| buffer.to_vec()),
                     name: self.name.clone(),
                 },
                 FrameCaptureTxToken {
-                    inner: tx,
+                    device: Arc::clone(&self.inner),
                     sender: &self.frame_sender,
                     port_no: self.port_no,
                     name: self.name.clone(),
                 },
-            )
-        });
-
-        if result.is_none() {
-            println!("[{}] No frames from tap device", self.name);
+            ));
         }
 
-        result
+        None
     }
 
-    fn transmit(&mut self, timestamp: Instant) -> Option<Self::TxToken<'_>> {
-        self.inner.lock().transmit(timestamp).map(|tx| {
-            FrameCaptureTxToken {
-                inner: tx,
-                sender: &self.frame_sender,
-                port_no: self.port_no,
-                name: self.name.clone(),
-            }
+    fn transmit(&mut self, _timestamp: Instant) -> Option<Self::TxToken<'_>> {
+        Some(FrameCaptureTxToken {
+            device: Arc::clone(&self.inner), // 克隆 Arc
+            sender: &self.frame_sender,
+            port_no: self.port_no,
+            name: self.name.clone(),
         })
     }
 }
@@ -119,7 +110,7 @@ impl RxToken for FrameCaptureRxToken {
 
 // 发送Token
 pub struct FrameCaptureTxToken<'a> {
-    inner: <TunTapInterface as Device>::TxToken<'a>,
+    device: Arc<Mutex<TunTapInterface>>,
     sender: &'a Producer,
     port_no: usize,
     name: String,
@@ -130,12 +121,20 @@ impl<'a> TxToken for FrameCaptureTxToken<'a> {
     where
         F: FnOnce(&mut [u8]) -> R,
     {
-        self.inner.consume(len, |buffer| {
-            let result = f(buffer);
-            println!("FrameCaptureTxToken consume: {:?}", buffer);
-            println!("\n[{}] Sending frame to switch from port {}", self.name, self.port_no);
-            let _ = self.sender.try_push_switch_frame((buffer.to_vec(), self.port_no));
-            result
-        })
+        let mut buffer = vec![0u8; len];
+        let result = f(&mut buffer);
+        
+        // 使用 device 发送数据
+        if let Some(tx) = self.device.lock().transmit(Instant::now()) {
+            tx.consume(len, |tx_buffer| {
+                tx_buffer.copy_from_slice(&buffer);
+            });
+        }
+
+        // 发送到交换机
+        println!("\n[{}] Sending frame to switch from port {}", self.name, self.port_no);
+        let _ = self.sender.try_push_switch_frame((buffer, self.port_no));
+        
+        result
     }
 }

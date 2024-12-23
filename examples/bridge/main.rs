@@ -1,13 +1,13 @@
+#[path = "../utils.rs"]
 mod utils;
 mod switch;
 mod frame;
 mod bridge_device;
 
-use frame::FrameCapture;
 use log::info;
-use switch::{create_port_channel, RingBuffer, Switch};
-
 use std::thread;
+use frame::FrameCapture;
+use switch::{create_port_channel, RingBuffer, Switch};
 
 use smoltcp::iface::{Config, Interface, SocketSet};
 use smoltcp::phy::{Medium, TunTapInterface};
@@ -69,6 +69,7 @@ fn run_server(
             info!("Server received: {:?} from {}", data, endpoint);
             let mut response = data.to_vec();
             response.reverse();
+            response.extend_from_slice(" - Server response".as_bytes());
             socket.send_slice(&response, endpoint).unwrap();
             info!("Server sent response: {:?} to {}", response, endpoint);
         }

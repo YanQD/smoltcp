@@ -1,3 +1,4 @@
+#[path = "../utils.rs"]
 mod utils;
 mod frame;
 mod switch;
@@ -182,7 +183,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     client_capture.set_port_no(client_port);
     server_capture.set_port_no(server_port);
 
-    // 预先添加MAC地址表项
+    // 预先添加 MAC 地址表项
     switch.add_mac_list(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x02]), client_port);
     switch.add_mac_list(EthernetAddress([0x02, 0x00, 0x00, 0x00, 0x00, 0x01]), server_port);
 

@@ -226,8 +226,6 @@ impl Switch {
     }
 }
 
-
-
 // 帮助函数：打印以太网帧内容
 fn print_ethernet_frame(buffer: &[u8]) {
     println!("\nFrame length: {} bytes", buffer.len());

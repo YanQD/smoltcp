@@ -2,7 +2,10 @@ extern crate alloc;
 
 use core::marker::PhantomData;
 use alloc::boxed::Box;
-use smoltcp::{phy::{Device, DeviceCapabilities, RxToken, TxToken}, time::Instant};
+use smoltcp::{
+    time::Instant,
+    phy::{Device, DeviceCapabilities, RxToken, TxToken}, 
+};
 
 pub trait ObjectSafeDeviceOps {
     fn capabilities(&self) -> DeviceCapabilities;
@@ -291,16 +294,24 @@ impl Device for BridgeDevice {
     }
 
     fn receive(&mut self, timestamp: Instant) -> Option<(Self::RxToken<'_>, Self::TxToken<'_>)> {
-        self.inner.receive(timestamp).map(|(rx, tx)| {(
-            RxTokenWrapper { rx },
-            TxTokenWrapper { tx }
-        )})
+        // 直接使用 inner.receive() 返回的 tokens
+        if let Some((rx, tx)) = self.inner.receive(timestamp) {
+            Some((
+                RxTokenWrapper { rx },
+                TxTokenWrapper { tx }
+            ))
+        } else {
+            None
+        }
     }
 
     fn transmit(&mut self, timestamp: Instant) -> Option<Self::TxToken<'_>> {
-        self.inner.transmit(timestamp).map(|tx| 
-            TxTokenWrapper { tx }
-        )
+        // 直接使用 inner.transmit() 返回的 token
+        if let Some(tx) = self.inner.transmit(timestamp) {
+            Some(TxTokenWrapper { tx })
+        } else {
+            None
+        }
     }
 }
 

@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::{Arc, Mutex}};
+use std::{
+    collections::HashMap, 
+    sync::{Arc, Mutex}
+};
 use smoltcp::wire::{EthernetAddress, EthernetFrame};
 
 // 使用枚举区分两种数据类型
